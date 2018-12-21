@@ -61,7 +61,7 @@ public class SentryExporter {
             Collections.singletonList(new HivePrincipal("admin", HivePrincipal.HivePrincipalType.USER)),
             Collections.singletonList(new HivePrivilege("SELECT", null)), false);
     // Send a request to server
-    client.grantAc cess(grantRequest);
+    client.grantAccess(grantRequest);
   }
 
   private static final Log LOG = LogFactory.getLog(SentryExporter.class);

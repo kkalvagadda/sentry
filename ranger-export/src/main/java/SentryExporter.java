@@ -85,10 +85,8 @@ public class SentryExporter {
         LOG.debug(String.format("Value for property[%s] was [%s].", propertyName, policySourceImpl));
       }
       try {
-        @SuppressWarnings("unchecked")
-        Class<RangerAdminClient> adminClass = (Class<RangerAdminClient>)Class.forName(policySourceImpl);
 
-        ret = adminClass.newInstance();
+        ret = RangerSentryRESTClient.class.newInstance();
       } catch (Exception excp) {
         LOG.error("failed to instantiate policy source of type '" + policySourceImpl + "'. Will use policy source of type '" + RangerAdminRESTClient.class.getName() + "'", excp);
       }

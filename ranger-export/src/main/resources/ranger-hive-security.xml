@@ -35,7 +35,7 @@
 
     <property>
         <name>ranger.plugin.hive.policy.rest.url</name>
-        <value>http://vb1523.halxg.cloudera.com:6080</value>
+        <value>http://localhost:6080</value>
         <description>
             URL to Ranger Admin
         </description>

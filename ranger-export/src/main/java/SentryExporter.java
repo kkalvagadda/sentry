@@ -54,14 +54,14 @@ public class SentryExporter {
 
     // Construct grant request
     HivePrivilegeObject hivePrivObject = new HivePrivilegeObject(HivePrivilegeObject.HivePrivilegeObjectType.TABLE_OR_VIEW,
-            "testing", "test");
+            "default", "default");
     RangerResource resource = getHiveResource(HiveOperationType.GRANT_PRIVILEGE, hivePrivObject);
 
     GrantRevokeRequest grantRequest = createGrantRevokeData(resource,
-            Collections.singletonList(new HivePrincipal("kkalyan", HivePrincipal.HivePrincipalType.USER)),
+            Collections.singletonList(new HivePrincipal("admin", HivePrincipal.HivePrincipalType.USER)),
             Collections.singletonList(new HivePrivilege("SELECT", null)), false);
     // Send a request to server
-    client.grantAccess(grantRequest);
+    client.grantAc cess(grantRequest);
   }
 
   private static final Log LOG = LogFactory.getLog(SentryExporter.class);

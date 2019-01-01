@@ -45,4 +45,8 @@ public interface PrivilegePrincipal {
 
   void removePrivileges();
 
+  String toString();
+
+  int hashCode();
+
 };

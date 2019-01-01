@@ -44,6 +44,19 @@ enum TSentryPrincipalType {
   USER = 2
 }
 
+# Represents principle
+struct TSentryPrincipal {
+1: required TSentryPrincipalType type,
+2: required string name
+}
+
+# Represents a Privilege in transport from the client to the server
+struct TPrivilege {
+1: required string action = "",
+2: optional i64 createTime, # Set on server side
+3: optional TSentryGrantOption grantOption = TSentryGrantOption.FALSE
+}
+
 # Represents a Privilege in transport from the client to the server
 struct TSentryPrivilege {
 1: required string privilegeScope, # Valid values are SERVER, DATABASE, TABLE, COLUMN, URI

@@ -14,7 +14,8 @@ import org.apache.thrift.TEnum;
 public enum TSentryPrincipalType implements org.apache.thrift.TEnum {
   NONE(0),
   ROLE(1),
-  USER(2);
+  USER(2),
+  GROUP(3);
 
   private final int value;
 
@@ -41,6 +42,8 @@ public enum TSentryPrincipalType implements org.apache.thrift.TEnum {
         return ROLE;
       case 2:
         return USER;
+      case 3:
+        return GROUP;
       default:
         return null;
     }

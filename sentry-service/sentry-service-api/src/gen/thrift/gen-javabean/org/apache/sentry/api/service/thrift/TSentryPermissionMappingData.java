@@ -38,8 +38,7 @@ import org.slf4j.LoggerFactory;
 public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSentryPermissionMappingData, TSentryPermissionMappingData._Fields>, java.io.Serializable, Cloneable, Comparable<TSentryPermissionMappingData> {
   private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("TSentryPermissionMappingData");
 
-  private static final org.apache.thrift.protocol.TField GROUP_ROLES_MAP_FIELD_DESC = new org.apache.thrift.protocol.TField("groupRolesMap", org.apache.thrift.protocol.TType.MAP, (short)1);
-  private static final org.apache.thrift.protocol.TField PERMISSION_MAPPING_FIELD_DESC = new org.apache.thrift.protocol.TField("permissionMapping", org.apache.thrift.protocol.TType.MAP, (short)2);
+  private static final org.apache.thrift.protocol.TField PERMISSION_MAPPING_FIELD_DESC = new org.apache.thrift.protocol.TField("permissionMapping", org.apache.thrift.protocol.TType.MAP, (short)1);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -47,13 +46,11 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
     schemes.put(TupleScheme.class, new TSentryPermissionMappingDataTupleSchemeFactory());
   }
 
-  private Map<String,Set<String>> groupRolesMap; // optional
-  private Map<TSentryAuthorizable,Map<TSentryPrincipal,List<TPrivilege>>> permissionMapping; // optional
+  private Map<TSentryAuthorizable,Map<TSentryPrincipal,List<TPrivilege>>> permissionMapping; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
-    GROUP_ROLES_MAP((short)1, "groupRolesMap"),
-    PERMISSION_MAPPING((short)2, "permissionMapping");
+    PERMISSION_MAPPING((short)1, "permissionMapping");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -68,9 +65,7 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
      */
     public static _Fields findByThriftId(int fieldId) {
       switch(fieldId) {
-        case 1: // GROUP_ROLES_MAP
-          return GROUP_ROLES_MAP;
-        case 2: // PERMISSION_MAPPING
+        case 1: // PERMISSION_MAPPING
           return PERMISSION_MAPPING;
         default:
           return null;
@@ -112,16 +107,10 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
   }
 
   // isset id assignments
-  private static final _Fields optionals[] = {_Fields.GROUP_ROLES_MAP,_Fields.PERMISSION_MAPPING};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-    tmpMap.put(_Fields.GROUP_ROLES_MAP, new org.apache.thrift.meta_data.FieldMetaData("groupRolesMap", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
-            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
-            new org.apache.thrift.meta_data.SetMetaData(org.apache.thrift.protocol.TType.SET, 
-                new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)))));
-    tmpMap.put(_Fields.PERMISSION_MAPPING, new org.apache.thrift.meta_data.FieldMetaData("permissionMapping", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+    tmpMap.put(_Fields.PERMISSION_MAPPING, new org.apache.thrift.meta_data.FieldMetaData("permissionMapping", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
             new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, TSentryAuthorizable.class), 
             new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
@@ -135,25 +124,17 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
   public TSentryPermissionMappingData() {
   }
 
+  public TSentryPermissionMappingData(
+    Map<TSentryAuthorizable,Map<TSentryPrincipal,List<TPrivilege>>> permissionMapping)
+  {
+    this();
+    this.permissionMapping = permissionMapping;
+  }
+
   /**
    * Performs a deep copy on <i>other</i>.
    */
   public TSentryPermissionMappingData(TSentryPermissionMappingData other) {
-    if (other.isSetGroupRolesMap()) {
-      Map<String,Set<String>> __this__groupRolesMap = new HashMap<String,Set<String>>(other.groupRolesMap.size());
-      for (Map.Entry<String, Set<String>> other_element : other.groupRolesMap.entrySet()) {
-
-        String other_element_key = other_element.getKey();
-        Set<String> other_element_value = other_element.getValue();
-
-        String __this__groupRolesMap_copy_key = other_element_key;
-
-        Set<String> __this__groupRolesMap_copy_value = new HashSet<String>(other_element_value);
-
-        __this__groupRolesMap.put(__this__groupRolesMap_copy_key, __this__groupRolesMap_copy_value);
-      }
-      this.groupRolesMap = __this__groupRolesMap;
-    }
     if (other.isSetPermissionMapping()) {
       Map<TSentryAuthorizable,Map<TSentryPrincipal,List<TPrivilege>>> __this__permissionMapping = new HashMap<TSentryAuthorizable,Map<TSentryPrincipal,List<TPrivilege>>>(other.permissionMapping.size());
       for (Map.Entry<TSentryAuthorizable, Map<TSentryPrincipal,List<TPrivilege>>> other_element : other.permissionMapping.entrySet()) {
@@ -191,42 +172,7 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
 
   @Override
   public void clear() {
-    this.groupRolesMap = null;
     this.permissionMapping = null;
-  }
-
-  public int getGroupRolesMapSize() {
-    return (this.groupRolesMap == null) ? 0 : this.groupRolesMap.size();
-  }
-
-  public void putToGroupRolesMap(String key, Set<String> val) {
-    if (this.groupRolesMap == null) {
-      this.groupRolesMap = new HashMap<String,Set<String>>();
-    }
-    this.groupRolesMap.put(key, val);
-  }
-
-  public Map<String,Set<String>> getGroupRolesMap() {
-    return this.groupRolesMap;
-  }
-
-  public void setGroupRolesMap(Map<String,Set<String>> groupRolesMap) {
-    this.groupRolesMap = groupRolesMap;
-  }
-
-  public void unsetGroupRolesMap() {
-    this.groupRolesMap = null;
-  }
-
-  /** Returns true if field groupRolesMap is set (has been assigned a value) and false otherwise */
-  public boolean isSetGroupRolesMap() {
-    return this.groupRolesMap != null;
-  }
-
-  public void setGroupRolesMapIsSet(boolean value) {
-    if (!value) {
-      this.groupRolesMap = null;
-    }
   }
 
   public int getPermissionMappingSize() {
@@ -265,14 +211,6 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
 
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
-    case GROUP_ROLES_MAP:
-      if (value == null) {
-        unsetGroupRolesMap();
-      } else {
-        setGroupRolesMap((Map<String,Set<String>>)value);
-      }
-      break;
-
     case PERMISSION_MAPPING:
       if (value == null) {
         unsetPermissionMapping();
@@ -286,9 +224,6 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
 
   public Object getFieldValue(_Fields field) {
     switch (field) {
-    case GROUP_ROLES_MAP:
-      return getGroupRolesMap();
-
     case PERMISSION_MAPPING:
       return getPermissionMapping();
 
@@ -303,8 +238,6 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
     }
 
     switch (field) {
-    case GROUP_ROLES_MAP:
-      return isSetGroupRolesMap();
     case PERMISSION_MAPPING:
       return isSetPermissionMapping();
     }
@@ -324,15 +257,6 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
     if (that == null)
       return false;
 
-    boolean this_present_groupRolesMap = true && this.isSetGroupRolesMap();
-    boolean that_present_groupRolesMap = true && that.isSetGroupRolesMap();
-    if (this_present_groupRolesMap || that_present_groupRolesMap) {
-      if (!(this_present_groupRolesMap && that_present_groupRolesMap))
-        return false;
-      if (!this.groupRolesMap.equals(that.groupRolesMap))
-        return false;
-    }
-
     boolean this_present_permissionMapping = true && this.isSetPermissionMapping();
     boolean that_present_permissionMapping = true && that.isSetPermissionMapping();
     if (this_present_permissionMapping || that_present_permissionMapping) {
@@ -348,11 +272,6 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
   @Override
   public int hashCode() {
     List<Object> list = new ArrayList<Object>();
-
-    boolean present_groupRolesMap = true && (isSetGroupRolesMap());
-    list.add(present_groupRolesMap);
-    if (present_groupRolesMap)
-      list.add(groupRolesMap);
 
     boolean present_permissionMapping = true && (isSetPermissionMapping());
     list.add(present_permissionMapping);
@@ -370,16 +289,6 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
 
     int lastComparison = 0;
 
-    lastComparison = Boolean.valueOf(isSetGroupRolesMap()).compareTo(other.isSetGroupRolesMap());
-    if (lastComparison != 0) {
-      return lastComparison;
-    }
-    if (isSetGroupRolesMap()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.groupRolesMap, other.groupRolesMap);
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-    }
     lastComparison = Boolean.valueOf(isSetPermissionMapping()).compareTo(other.isSetPermissionMapping());
     if (lastComparison != 0) {
       return lastComparison;
@@ -410,31 +319,23 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
     StringBuilder sb = new StringBuilder("TSentryPermissionMappingData(");
     boolean first = true;
 
-    if (isSetGroupRolesMap()) {
-      sb.append("groupRolesMap:");
-      if (this.groupRolesMap == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.groupRolesMap);
-      }
-      first = false;
+    sb.append("permissionMapping:");
+    if (this.permissionMapping == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.permissionMapping);
     }
-    if (isSetPermissionMapping()) {
-      if (!first) sb.append(", ");
-      sb.append("permissionMapping:");
-      if (this.permissionMapping == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.permissionMapping);
-      }
-      first = false;
-    }
+    first = false;
     sb.append(")");
     return sb.toString();
   }
 
   public void validate() throws org.apache.thrift.TException {
     // check for required fields
+    if (!isSetPermissionMapping()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'permissionMapping' is unset! Struct:" + toString());
+    }
+
     // check for sub-struct validity
   }
 
@@ -472,73 +373,43 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
           break;
         }
         switch (schemeField.id) {
-          case 1: // GROUP_ROLES_MAP
+          case 1: // PERMISSION_MAPPING
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
                 org.apache.thrift.protocol.TMap _map228 = iprot.readMapBegin();
-                struct.groupRolesMap = new HashMap<String,Set<String>>(2*_map228.size);
-                String _key229;
-                Set<String> _val230;
+                struct.permissionMapping = new HashMap<TSentryAuthorizable,Map<TSentryPrincipal,List<TPrivilege>>>(2*_map228.size);
+                TSentryAuthorizable _key229;
+                Map<TSentryPrincipal,List<TPrivilege>> _val230;
                 for (int _i231 = 0; _i231 < _map228.size; ++_i231)
                 {
-                  _key229 = iprot.readString();
+                  _key229 = new TSentryAuthorizable();
+                  _key229.read(iprot);
                   {
-                    org.apache.thrift.protocol.TSet _set232 = iprot.readSetBegin();
-                    _val230 = new HashSet<String>(2*_set232.size);
-                    String _elem233;
-                    for (int _i234 = 0; _i234 < _set232.size; ++_i234)
+                    org.apache.thrift.protocol.TMap _map232 = iprot.readMapBegin();
+                    _val230 = new HashMap<TSentryPrincipal,List<TPrivilege>>(2*_map232.size);
+                    TSentryPrincipal _key233;
+                    List<TPrivilege> _val234;
+                    for (int _i235 = 0; _i235 < _map232.size; ++_i235)
                     {
-                      _elem233 = iprot.readString();
-                      _val230.add(_elem233);
-                    }
-                    iprot.readSetEnd();
-                  }
-                  struct.groupRolesMap.put(_key229, _val230);
-                }
-                iprot.readMapEnd();
-              }
-              struct.setGroupRolesMapIsSet(true);
-            } else { 
-              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
-            }
-            break;
-          case 2: // PERMISSION_MAPPING
-            if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
-              {
-                org.apache.thrift.protocol.TMap _map235 = iprot.readMapBegin();
-                struct.permissionMapping = new HashMap<TSentryAuthorizable,Map<TSentryPrincipal,List<TPrivilege>>>(2*_map235.size);
-                TSentryAuthorizable _key236;
-                Map<TSentryPrincipal,List<TPrivilege>> _val237;
-                for (int _i238 = 0; _i238 < _map235.size; ++_i238)
-                {
-                  _key236 = new TSentryAuthorizable();
-                  _key236.read(iprot);
-                  {
-                    org.apache.thrift.protocol.TMap _map239 = iprot.readMapBegin();
-                    _val237 = new HashMap<TSentryPrincipal,List<TPrivilege>>(2*_map239.size);
-                    TSentryPrincipal _key240;
-                    List<TPrivilege> _val241;
-                    for (int _i242 = 0; _i242 < _map239.size; ++_i242)
-                    {
-                      _key240 = new TSentryPrincipal();
-                      _key240.read(iprot);
+                      _key233 = new TSentryPrincipal();
+                      _key233.read(iprot);
                       {
-                        org.apache.thrift.protocol.TList _list243 = iprot.readListBegin();
-                        _val241 = new ArrayList<TPrivilege>(_list243.size);
-                        TPrivilege _elem244;
-                        for (int _i245 = 0; _i245 < _list243.size; ++_i245)
+                        org.apache.thrift.protocol.TList _list236 = iprot.readListBegin();
+                        _val234 = new ArrayList<TPrivilege>(_list236.size);
+                        TPrivilege _elem237;
+                        for (int _i238 = 0; _i238 < _list236.size; ++_i238)
                         {
-                          _elem244 = new TPrivilege();
-                          _elem244.read(iprot);
-                          _val241.add(_elem244);
+                          _elem237 = new TPrivilege();
+                          _elem237.read(iprot);
+                          _val234.add(_elem237);
                         }
                         iprot.readListEnd();
                       }
-                      _val237.put(_key240, _val241);
+                      _val230.put(_key233, _val234);
                     }
                     iprot.readMapEnd();
                   }
-                  struct.permissionMapping.put(_key236, _val237);
+                  struct.permissionMapping.put(_key229, _val230);
                 }
                 iprot.readMapEnd();
               }
@@ -560,57 +431,33 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
       struct.validate();
 
       oprot.writeStructBegin(STRUCT_DESC);
-      if (struct.groupRolesMap != null) {
-        if (struct.isSetGroupRolesMap()) {
-          oprot.writeFieldBegin(GROUP_ROLES_MAP_FIELD_DESC);
-          {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.SET, struct.groupRolesMap.size()));
-            for (Map.Entry<String, Set<String>> _iter246 : struct.groupRolesMap.entrySet())
-            {
-              oprot.writeString(_iter246.getKey());
-              {
-                oprot.writeSetBegin(new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRING, _iter246.getValue().size()));
-                for (String _iter247 : _iter246.getValue())
-                {
-                  oprot.writeString(_iter247);
-                }
-                oprot.writeSetEnd();
-              }
-            }
-            oprot.writeMapEnd();
-          }
-          oprot.writeFieldEnd();
-        }
-      }
       if (struct.permissionMapping != null) {
-        if (struct.isSetPermissionMapping()) {
-          oprot.writeFieldBegin(PERMISSION_MAPPING_FIELD_DESC);
+        oprot.writeFieldBegin(PERMISSION_MAPPING_FIELD_DESC);
+        {
+          oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.MAP, struct.permissionMapping.size()));
+          for (Map.Entry<TSentryAuthorizable, Map<TSentryPrincipal,List<TPrivilege>>> _iter239 : struct.permissionMapping.entrySet())
           {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.MAP, struct.permissionMapping.size()));
-            for (Map.Entry<TSentryAuthorizable, Map<TSentryPrincipal,List<TPrivilege>>> _iter248 : struct.permissionMapping.entrySet())
+            _iter239.getKey().write(oprot);
             {
-              _iter248.getKey().write(oprot);
+              oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.LIST, _iter239.getValue().size()));
+              for (Map.Entry<TSentryPrincipal, List<TPrivilege>> _iter240 : _iter239.getValue().entrySet())
               {
-                oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.LIST, _iter248.getValue().size()));
-                for (Map.Entry<TSentryPrincipal, List<TPrivilege>> _iter249 : _iter248.getValue().entrySet())
+                _iter240.getKey().write(oprot);
                 {
-                  _iter249.getKey().write(oprot);
+                  oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, _iter240.getValue().size()));
+                  for (TPrivilege _iter241 : _iter240.getValue())
                   {
-                    oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, _iter249.getValue().size()));
-                    for (TPrivilege _iter250 : _iter249.getValue())
-                    {
-                      _iter250.write(oprot);
-                    }
-                    oprot.writeListEnd();
+                    _iter241.write(oprot);
                   }
+                  oprot.writeListEnd();
                 }
-                oprot.writeMapEnd();
               }
+              oprot.writeMapEnd();
             }
-            oprot.writeMapEnd();
           }
-          oprot.writeFieldEnd();
+          oprot.writeMapEnd();
         }
+        oprot.writeFieldEnd();
       }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
@@ -629,47 +476,21 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
     @Override
     public void write(org.apache.thrift.protocol.TProtocol prot, TSentryPermissionMappingData struct) throws org.apache.thrift.TException {
       TTupleProtocol oprot = (TTupleProtocol) prot;
-      BitSet optionals = new BitSet();
-      if (struct.isSetGroupRolesMap()) {
-        optionals.set(0);
-      }
-      if (struct.isSetPermissionMapping()) {
-        optionals.set(1);
-      }
-      oprot.writeBitSet(optionals, 2);
-      if (struct.isSetGroupRolesMap()) {
+      {
+        oprot.writeI32(struct.permissionMapping.size());
+        for (Map.Entry<TSentryAuthorizable, Map<TSentryPrincipal,List<TPrivilege>>> _iter242 : struct.permissionMapping.entrySet())
         {
-          oprot.writeI32(struct.groupRolesMap.size());
-          for (Map.Entry<String, Set<String>> _iter251 : struct.groupRolesMap.entrySet())
+          _iter242.getKey().write(oprot);
           {
-            oprot.writeString(_iter251.getKey());
+            oprot.writeI32(_iter242.getValue().size());
+            for (Map.Entry<TSentryPrincipal, List<TPrivilege>> _iter243 : _iter242.getValue().entrySet())
             {
-              oprot.writeI32(_iter251.getValue().size());
-              for (String _iter252 : _iter251.getValue())
+              _iter243.getKey().write(oprot);
               {
-                oprot.writeString(_iter252);
-              }
-            }
-          }
-        }
-      }
-      if (struct.isSetPermissionMapping()) {
-        {
-          oprot.writeI32(struct.permissionMapping.size());
-          for (Map.Entry<TSentryAuthorizable, Map<TSentryPrincipal,List<TPrivilege>>> _iter253 : struct.permissionMapping.entrySet())
-          {
-            _iter253.getKey().write(oprot);
-            {
-              oprot.writeI32(_iter253.getValue().size());
-              for (Map.Entry<TSentryPrincipal, List<TPrivilege>> _iter254 : _iter253.getValue().entrySet())
-              {
-                _iter254.getKey().write(oprot);
+                oprot.writeI32(_iter243.getValue().size());
+                for (TPrivilege _iter244 : _iter243.getValue())
                 {
-                  oprot.writeI32(_iter254.getValue().size());
-                  for (TPrivilege _iter255 : _iter254.getValue())
-                  {
-                    _iter255.write(oprot);
-                  }
+                  _iter244.write(oprot);
                 }
               }
             }
@@ -681,69 +502,42 @@ public class TSentryPermissionMappingData implements org.apache.thrift.TBase<TSe
     @Override
     public void read(org.apache.thrift.protocol.TProtocol prot, TSentryPermissionMappingData struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
-      BitSet incoming = iprot.readBitSet(2);
-      if (incoming.get(0)) {
+      {
+        org.apache.thrift.protocol.TMap _map245 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.MAP, iprot.readI32());
+        struct.permissionMapping = new HashMap<TSentryAuthorizable,Map<TSentryPrincipal,List<TPrivilege>>>(2*_map245.size);
+        TSentryAuthorizable _key246;
+        Map<TSentryPrincipal,List<TPrivilege>> _val247;
+        for (int _i248 = 0; _i248 < _map245.size; ++_i248)
         {
-          org.apache.thrift.protocol.TMap _map256 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.SET, iprot.readI32());
-          struct.groupRolesMap = new HashMap<String,Set<String>>(2*_map256.size);
-          String _key257;
-          Set<String> _val258;
-          for (int _i259 = 0; _i259 < _map256.size; ++_i259)
+          _key246 = new TSentryAuthorizable();
+          _key246.read(iprot);
           {
-            _key257 = iprot.readString();
+            org.apache.thrift.protocol.TMap _map249 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.LIST, iprot.readI32());
+            _val247 = new HashMap<TSentryPrincipal,List<TPrivilege>>(2*_map249.size);
+            TSentryPrincipal _key250;
+            List<TPrivilege> _val251;
+            for (int _i252 = 0; _i252 < _map249.size; ++_i252)
             {
-              org.apache.thrift.protocol.TSet _set260 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRING, iprot.readI32());
-              _val258 = new HashSet<String>(2*_set260.size);
-              String _elem261;
-              for (int _i262 = 0; _i262 < _set260.size; ++_i262)
+              _key250 = new TSentryPrincipal();
+              _key250.read(iprot);
               {
-                _elem261 = iprot.readString();
-                _val258.add(_elem261);
-              }
-            }
-            struct.groupRolesMap.put(_key257, _val258);
-          }
-        }
-        struct.setGroupRolesMapIsSet(true);
-      }
-      if (incoming.get(1)) {
-        {
-          org.apache.thrift.protocol.TMap _map263 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.MAP, iprot.readI32());
-          struct.permissionMapping = new HashMap<TSentryAuthorizable,Map<TSentryPrincipal,List<TPrivilege>>>(2*_map263.size);
-          TSentryAuthorizable _key264;
-          Map<TSentryPrincipal,List<TPrivilege>> _val265;
-          for (int _i266 = 0; _i266 < _map263.size; ++_i266)
-          {
-            _key264 = new TSentryAuthorizable();
-            _key264.read(iprot);
-            {
-              org.apache.thrift.protocol.TMap _map267 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.LIST, iprot.readI32());
-              _val265 = new HashMap<TSentryPrincipal,List<TPrivilege>>(2*_map267.size);
-              TSentryPrincipal _key268;
-              List<TPrivilege> _val269;
-              for (int _i270 = 0; _i270 < _map267.size; ++_i270)
-              {
-                _key268 = new TSentryPrincipal();
-                _key268.read(iprot);
+                org.apache.thrift.protocol.TList _list253 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+                _val251 = new ArrayList<TPrivilege>(_list253.size);
+                TPrivilege _elem254;
+                for (int _i255 = 0; _i255 < _list253.size; ++_i255)
                 {
-                  org.apache.thrift.protocol.TList _list271 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-                  _val269 = new ArrayList<TPrivilege>(_list271.size);
-                  TPrivilege _elem272;
-                  for (int _i273 = 0; _i273 < _list271.size; ++_i273)
-                  {
-                    _elem272 = new TPrivilege();
-                    _elem272.read(iprot);
-                    _val269.add(_elem272);
-                  }
+                  _elem254 = new TPrivilege();
+                  _elem254.read(iprot);
+                  _val251.add(_elem254);
                 }
-                _val265.put(_key268, _val269);
               }
+              _val247.put(_key250, _val251);
             }
-            struct.permissionMapping.put(_key264, _val265);
           }
+          struct.permissionMapping.put(_key246, _val247);
         }
-        struct.setPermissionMappingIsSet(true);
       }
+      struct.setPermissionMappingIsSet(true);
     }
   }
 

@@ -539,14 +539,14 @@ public class TSentryExportMappingDataRequest implements org.apache.thrift.TBase<
           case 3: // AUTHORIZABLES
             if (schemeField.type == org.apache.thrift.protocol.TType.SET) {
               {
-                org.apache.thrift.protocol.TSet _set274 = iprot.readSetBegin();
-                struct.authorizables = new HashSet<TSentryAuthorizable>(2*_set274.size);
-                TSentryAuthorizable _elem275;
-                for (int _i276 = 0; _i276 < _set274.size; ++_i276)
+                org.apache.thrift.protocol.TSet _set256 = iprot.readSetBegin();
+                struct.authorizables = new HashSet<TSentryAuthorizable>(2*_set256.size);
+                TSentryAuthorizable _elem257;
+                for (int _i258 = 0; _i258 < _set256.size; ++_i258)
                 {
-                  _elem275 = new TSentryAuthorizable();
-                  _elem275.read(iprot);
-                  struct.authorizables.add(_elem275);
+                  _elem257 = new TSentryAuthorizable();
+                  _elem257.read(iprot);
+                  struct.authorizables.add(_elem257);
                 }
                 iprot.readSetEnd();
               }
@@ -581,9 +581,9 @@ public class TSentryExportMappingDataRequest implements org.apache.thrift.TBase<
           oprot.writeFieldBegin(AUTHORIZABLES_FIELD_DESC);
           {
             oprot.writeSetBegin(new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRUCT, struct.authorizables.size()));
-            for (TSentryAuthorizable _iter277 : struct.authorizables)
+            for (TSentryAuthorizable _iter259 : struct.authorizables)
             {
-              _iter277.write(oprot);
+              _iter259.write(oprot);
             }
             oprot.writeSetEnd();
           }
@@ -617,9 +617,9 @@ public class TSentryExportMappingDataRequest implements org.apache.thrift.TBase<
       if (struct.isSetAuthorizables()) {
         {
           oprot.writeI32(struct.authorizables.size());
-          for (TSentryAuthorizable _iter278 : struct.authorizables)
+          for (TSentryAuthorizable _iter260 : struct.authorizables)
           {
-            _iter278.write(oprot);
+            _iter260.write(oprot);
           }
         }
       }
@@ -635,14 +635,14 @@ public class TSentryExportMappingDataRequest implements org.apache.thrift.TBase<
       BitSet incoming = iprot.readBitSet(1);
       if (incoming.get(0)) {
         {
-          org.apache.thrift.protocol.TSet _set279 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.authorizables = new HashSet<TSentryAuthorizable>(2*_set279.size);
-          TSentryAuthorizable _elem280;
-          for (int _i281 = 0; _i281 < _set279.size; ++_i281)
+          org.apache.thrift.protocol.TSet _set261 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.authorizables = new HashSet<TSentryAuthorizable>(2*_set261.size);
+          TSentryAuthorizable _elem262;
+          for (int _i263 = 0; _i263 < _set261.size; ++_i263)
           {
-            _elem280 = new TSentryAuthorizable();
-            _elem280.read(iprot);
-            struct.authorizables.add(_elem280);
+            _elem262 = new TSentryAuthorizable();
+            _elem262.read(iprot);
+            struct.authorizables.add(_elem262);
           }
         }
         struct.setAuthorizablesIsSet(true);

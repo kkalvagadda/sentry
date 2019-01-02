@@ -1940,8 +1940,11 @@ public class TestSentryStore extends org.junit.Assert {
   public void testTranslatePrivileges() throws Exception {
     String roleName1 = "list-privs-r1";
     String userName1 = "user1";
+    String group1 = "group1";
+    TSentryGroup tSentryGroup = new TSentryGroup();
     String uri1 = "file:///var/folders/dt/9zm44z9s6bjfxbrm4v36lzdc0000gp/T/1401860678102-0/data/kv1.dat";
 
+    tSentryGroup.setGroupName(group1);
     sentryStore.createSentryRole(roleName1);
     sentryStore.createSentryUser(userName1);
 
@@ -1997,6 +2000,7 @@ public class TestSentryStore extends org.junit.Assert {
     tSentryUriAuthorizable.setUri(uri1);
     tSentryUriAuthorizable.setServer("server1");
 
+    sentryStore.alterSentryRoleAddGroups(null, roleName1, Collections.singleton(tSentryGroup));
 
     sentryStore.alterSentryGrantPrivileges(SentryPrincipalType.ROLE, roleName1, Sets.newHashSet(privilege_tbl1,privilege_tbl2, privilege_col1, tSentryUriPrivilege), null);
 
@@ -2009,12 +2013,12 @@ public class TestSentryStore extends org.junit.Assert {
     assertEquals(4, mapping.size());
 
     TSentryAuthorizable authorizable = new TSentryAuthorizable();
-    TPrivilegePrincipal rolePrincipal = new TPrivilegePrincipal();
-    rolePrincipal.setType(TPrivilegePrincipalType.ROLE);
-    rolePrincipal.setValue(roleName1);
-    TPrivilegePrincipal userPrincipal = new TPrivilegePrincipal();
-    userPrincipal.setType(TPrivilegePrincipalType.USER);
-    userPrincipal.setValue(userName1);
+    TSentryPrincipal groupPrincipal = new TSentryPrincipal();
+    groupPrincipal.setType(TSentryPrincipalType.GROUP);
+    groupPrincipal.setName(group1);
+    TSentryPrincipal userPrincipal = new TSentryPrincipal();
+    userPrincipal.setType(TSentryPrincipalType.USER);
+    userPrincipal.setName(userName1);
     authorizable.setServer("server1");
     authorizable.setDb("db1");
     authorizable.setTable("tbl1");
@@ -2023,26 +2027,26 @@ public class TestSentryStore extends org.junit.Assert {
   //  TPrivilege tPrivilege = new TPrivilege();
     assertTrue(mapping.containsKey(authorizable));
     assertEquals(2, mapping.get(authorizable).size());
-    assertEquals(1, mapping.get(authorizable).get(rolePrincipal).size());
-//    assertTrue(mapping.get(authorizable).get(rolePrincipal).contains("select"));
+    assertEquals(1, mapping.get(authorizable).get(groupPrincipal).size());
+    assertTrue(mapping.get(authorizable).get(groupPrincipal).stream().anyMatch(x -> x.getAction().contains("select")));
     assertEquals(1, mapping.get(authorizable).get(userPrincipal).size());
-//    assertTrue(mapping.get(authorizable).get(userPrincipal).contains("select"));
+    assertTrue(mapping.get(authorizable).get(userPrincipal).stream().anyMatch(x -> x.getAction().contains("select")));
 
     authorizable.setTable("tbl2");
     assertTrue(mapping.containsKey(authorizable));
     assertEquals(2, mapping.get(authorizable).size());
-    assertEquals(1, mapping.get(authorizable).get(rolePrincipal).size());
-//    assertTrue(mapping.get(authorizable).get(rolePrincipal).contains("select"));
+    assertEquals(1, mapping.get(authorizable).get(groupPrincipal).size());
+    assertTrue(mapping.get(authorizable).get(groupPrincipal).stream().anyMatch(x -> x.getAction().contains("select")));
     assertEquals(1, mapping.get(authorizable).get(userPrincipal).size());
-//    assertTrue(mapping.get(authorizable).get(userPrincipal).contains("select"));
+    assertTrue(mapping.get(authorizable).get(userPrincipal).stream().anyMatch(x -> x.getAction().contains("select")));
 
     authorizable.setDb("db3");
     authorizable.setTable("tbl3");
     authorizable.setColumn("column1");
     assertTrue(mapping.containsKey(authorizable));
     assertEquals(1, mapping.get(authorizable).size());
-    assertEquals(1, mapping.get(authorizable).get(rolePrincipal).size());
-//    assertTrue(mapping.get(authorizable).get(rolePrincipal).contains("select"));
+    assertEquals(1, mapping.get(authorizable).get(groupPrincipal).size());
+    assertTrue(mapping.get(authorizable).get(groupPrincipal).stream().anyMatch(x -> x.getAction().contains("select")));
 
     authorizable.clear();
     authorizable.setDb("");
@@ -2054,11 +2058,10 @@ public class TestSentryStore extends org.junit.Assert {
 
     assertTrue(mapping.containsKey(authorizable));
     assertEquals(2, mapping.get(authorizable).size());
-    assertEquals(1, mapping.get(authorizable).get(rolePrincipal).size());
-//    assertTrue(mapping.get(authorizable).get(rolePrincipal).contains("all"));
+    assertEquals(1, mapping.get(authorizable).get(groupPrincipal).size());
+    assertTrue(mapping.get(authorizable).get(groupPrincipal).stream().anyMatch(x -> x.getAction().contains("all")));
     assertEquals(1, mapping.get(authorizable).get(userPrincipal).size());
-//    assertTrue(mapping.get(authorizable).get(userPrincipal).contains("all"));
-
+    assertTrue(mapping.get(authorizable).get(userPrincipal).stream().anyMatch(x -> x.getAction().contains("all")));
   }
 
   @Test

@@ -1111,6 +1111,27 @@ public class SentryPolicyServiceClientDefaultImpl implements SentryPolicyService
     }
   }
 
+
+
+  // export the sentry mapping data with map structure
+  @Override
+  public Map<TSentryAuthorizable,Map<TSentryPrincipal,List<TPrivilege>>> fetchPolicyMappings
+  (String requestorUserName, String remoteIp, long remotePort) throws SentryUserException {
+    TSentryExportMappingDataRequest request = new TSentryExportMappingDataRequest(
+            ThriftConstants.TSENTRY_SERVICE_VERSION_CURRENT, requestorUserName);
+    request.setAuthorizables(Collections.EMPTY_SET);
+    try {
+      TSentryExportPermissionsMappingDataResponse response = client.export_sentry_permission_mapping_data(request);
+      Status.throwIfNotOk(response.getStatus());
+
+      TSentryPermissionMappingData tSentryMappingData = response.getMappingData();
+      return tSentryMappingData.getPermissionMapping();
+
+    } catch (TException e) {
+      throw new SentryUserException(THRIFT_EXCEPTION_MESSAGE, e);
+    }
+  }
+
   // convert the mapping data for [roleName,privilege] from TSentryMappingData.RolePrivilegesMap to
   // map structure
   private Map<String, Set<String>> convertRolePrivilegesMapForPolicyFile(

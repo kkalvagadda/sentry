@@ -1409,17 +1409,6 @@ public class SentryPolicyStoreProcessor implements SentryPolicyService.Iface {
 
       tSentryPermissionMappingData.setPermissionMapping(mappingData);
 
-
-//      // roleNames should be null if databaseName == null and tableName == null
-//      if (databaseName == null && tableName == null) {
-//        roleNames = null;
-//      }
-      List<Map<String, Set<String>>> mapList = sentryStore.getGroupUserRoleMapList(
-              null);
-
-      tSentryPermissionMappingData.setGroupRolesMap(mapList.get(
-              SentryConstants.INDEX_GROUP_ROLES_MAP));
-
       response.setMappingData(tSentryPermissionMappingData);
       response.setStatus(Status.OK());
     } catch (SentryAccessDeniedException e) {

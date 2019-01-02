@@ -41,7 +41,8 @@ enum TSentryGrantOption {
 enum TSentryPrincipalType {
   NONE = 0,
   ROLE = 1,
-  USER = 2
+  USER = 2,
+  GROUP = 3
 }
 
 # Represents principle
@@ -306,8 +307,7 @@ struct TSentryMappingData {
 }
 
 struct TSentryPermissionMappingData {
-1: optional map<string, set<string>> groupRolesMap,                # for the groupName -> role mapping
-2: optional map<TSentryAuthorizable, map<TSentryPrincipal, list<TPrivilege>>> permissionMapping
+1: required map<TSentryAuthorizable, map<TSentryPrincipal, list<TPrivilege>>> permissionMapping
 }
 
 struct TSentryExportMappingDataRequest {

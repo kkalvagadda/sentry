@@ -284,6 +284,8 @@ public interface SentryPolicyServiceClient extends AutoCloseable {
   Map<String, Map<String, Set<String>>> exportPolicy(String requestorUserName, String objectPath)
       throws SentryUserException;
 
+  Map<TSentryAuthorizable,Map<TSentryPrincipal,List<TPrivilege>>> fetchPolicyMappings
+          (String requestorUserName, String remoteIp, long remotePort) throws SentryUserException;
   /**
    * Requests the sentry server to synchronize all HMS notification events up to the specified id.
    * The sentry server will return once it have processed the id specified..

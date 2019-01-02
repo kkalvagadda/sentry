@@ -35,7 +35,7 @@
 
     <property>
         <name>ranger.plugin.hive.policy.rest.url</name>
-        <value>http://localhost:6080</value>
+        <value>http://127.0.0.1:6080</value>
         <description>
             URL to Ranger Admin
         </description>

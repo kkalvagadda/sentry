@@ -46,12 +46,16 @@ public class SentryExporter {
 
     String serviceName = configuration.get(propertyPrefix + ".service.name");
 
+    // Connect to sentry server
+
+    // Fetch the permission mapping
 
 
     // Create ranger client
     RangerAdminClient client = createAdminClient(serviceName, "hive", propertyPrefix);
     // Try to connect to server
 
+    // For each entry in the mapping create HivePrivilegeObject and grant principals with the privileges.
     // Construct grant request
     HivePrivilegeObject hivePrivObject = new HivePrivilegeObject(HivePrivilegeObject.HivePrivilegeObjectType.TABLE_OR_VIEW,
             "default", "default");
@@ -93,7 +97,7 @@ public class SentryExporter {
     }
 
     if(ret == null) {
-      ret = new RangerAdminRESTClient();
+      ret = new RangerSentryRESTClient();
     }
 
     ret.init(rangerServiceName, applicationId, propertyPrefix);

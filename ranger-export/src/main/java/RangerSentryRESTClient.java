@@ -21,12 +21,12 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.GenericType;
 import com.sun.jersey.api.client.WebResource;
 
+import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.ranger.admin.client.RangerAdminClient;
-import org.apache.ranger.admin.client.RangerAdminRESTClient;
 import org.apache.ranger.admin.client.datatype.RESTResponse;
 import org.apache.ranger.audit.provider.MiscUtil;
 import org.apache.ranger.authorization.hadoop.config.RangerConfiguration;
@@ -37,15 +37,16 @@ import org.apache.ranger.plugin.util.RangerRESTUtils;
 import org.apache.ranger.plugin.util.RangerServiceNotFoundException;
 import org.apache.ranger.plugin.util.ServicePolicies;
 import org.apache.ranger.plugin.util.ServiceTags;
+import org.apache.ranger.plugin.model.RangerPolicy;
 
 import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.security.PrivilegedAction;
-import java.util.List;
+import java.util.*;
 
 public class RangerSentryRESTClient implements RangerAdminClient {
-  private static final Log LOG = LogFactory.getLog(RangerAdminRESTClient.class);
+  private static final Log LOG = LogFactory.getLog(RangerSentryRESTClient.class);
 
   private String           serviceName;
   private String           pluginId;
@@ -187,9 +188,62 @@ public class RangerSentryRESTClient implements RangerAdminClient {
       }
       response = user.doAs(action);
     } else {
-      WebResource webResource = createWebResource(RangerRESTUtils.REST_URL_SERVICE_GRANT_ACCESS + serviceName)
-              .queryParam(RangerRESTUtils.REST_PARAM_PLUGIN_ID, pluginId);
-      response = webResource.accept(RangerRESTUtils.REST_EXPECTED_MIME_TYPE).type(RangerRESTUtils.REST_EXPECTED_MIME_TYPE).post(ClientResponse.class, restClient.toJson(request));
+      //exporting
+
+//      WebResource webResource = createWebResource("/service/plugins/policies/exportJson")
+//              .queryParam("serviceName", "Sandbox_hive")
+//              .queryParam("checkPoliciesExists", "false");
+//      webResource.addFilter(new HTTPBasicAuthFilter("admin", "hortonworks1"));
+//      response = webResource.accept("text/json,application/xhtml+xml,application/xml").get(ClientResponse.class);
+
+      // Grant privilege
+//      WebResource webResource = createWebResource("/service/plugins/services/grant/"+ serviceName);
+//      webResource.addFilter(new HTTPBasicAuthFilter("admin", "hortonworks1"));
+//      response = webResource.accept(RangerRESTUtils.REST_EXPECTED_MIME_TYPE).type(RangerRESTUtils.REST_EXPECTED_MIME_TYPE).post(ClientResponse.class, restClient.toJson(request));
+
+
+      // Update ranger policy
+//      WebResource webResource = createWebResource("/service/plugins/policies/17");
+//      webResource.addFilter(new HTTPBasicAuthFilter("admin", "hortonworks1"));
+// //     RangerPolicy policy = new RangerPolicy("Sandbox_hive", "temp", 0, 0, "", )
+//      response = webResource.accept(RangerRESTUtils.REST_MIME_TYPE_JSON).type(RangerRESTUtils.REST_MIME_TYPE_JSON).put(ClientResponse.class,
+//              restClient.toJson(new RangerPolicy()));
+
+//       create policy ( working)
+//            WebResource webResource = createWebResource("/service/plugins/policies");
+//      webResource.addFilter(new HTTPBasicAuthFilter("admin", "hortonworks1"));
+//      Map<String, RangerPolicy.RangerPolicyResource> resources = new HashMap<>();
+//      resources.put("database", new RangerPolicy.RangerPolicyResource("database1"));
+//      resources.put("table", new RangerPolicy.RangerPolicyResource("table1"));
+//      resources.put("column", new RangerPolicy.RangerPolicyResource("column1"));
+//      RangerPolicy.RangerPolicyItem rangerPolicyItem = new RangerPolicy.RangerPolicyItem();
+//      rangerPolicyItem.getAccesses().add(new RangerPolicy.RangerPolicyItemAccess("create", true));
+//      rangerPolicyItem.getGroups().add("raj_ops");
+//      rangerPolicyItem.getUsers().add("raj_ops");
+//      rangerPolicyItem.getUsers().add("kafka");
+//      rangerPolicyItem.setDelegateAdmin(false);
+//      RangerPolicy policy = new RangerPolicy();
+//      policy.setService("Sandbox_hive");
+//      policy.setName("temp1234");
+//      policy.setDescription("created by kalyan");
+//      policy.setIsAuditEnabled(false);
+//      policy.setCreatedBy("admin");
+//      policy.setResources(resources);
+//      policy.getPolicyItems().add(rangerPolicyItem);
+//
+//      response = webResource.accept(RangerRESTUtils.REST_EXPECTED_MIME_TYPE).type(RangerRESTUtils.REST_EXPECTED_MIME_TYPE)
+//              .post(ClientResponse.class,
+//              restClient.toJson(policy));
+
+      // Delete policy ( working)
+     WebResource webResource = createWebResource("/service/plugins/policies/28");
+      webResource.addFilter(new HTTPBasicAuthFilter("admin", "hortonworks1"));
+      response = webResource.accept(RangerRESTUtils.REST_EXPECTED_MIME_TYPE).type(RangerRESTUtils.REST_EXPECTED_MIME_TYPE)
+              .delete(ClientResponse.class);
+
+        response = webResource.accept(RangerRESTUtils.REST_MIME_TYPE_JSON).type(RangerRESTUtils.REST_MIME_TYPE_JSON).get(ClientResponse.class);
+      response = webResource.accept(RangerRESTUtils.REST_EXPECTED_MIME_TYPE).type(RangerRESTUtils.REST_EXPECTED_MIME_TYPE).get(ClientResponse.class);
+
     }
     if(response != null && response.getStatus() != HttpServletResponse.SC_OK) {
       RESTResponse resp = RESTResponse.fromClientResponse(response);
@@ -202,6 +256,10 @@ public class RangerSentryRESTClient implements RangerAdminClient {
       throw new Exception("HTTP " + response.getStatus() + " Error: " + resp.getMessage());
     } else if(response == null) {
       throw new Exception("unknown error during grantAccess. serviceName="  + serviceName);
+    } else if (response.getStatus() == HttpServletResponse.SC_OK) {
+      // RESTResponse resp = RESTResponse.fromClientResponse(response);
+      RangerPolicy policyCreated = response.getEntity(RangerPolicy.class);
+      LOG.error("Policy is created with id %s" + policyCreated.getId());
     }
 
     if(LOG.isDebugEnabled()) {

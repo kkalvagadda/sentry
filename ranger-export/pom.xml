@@ -52,5 +52,15 @@ limitations under the License.
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-metastore</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.sentry</groupId>
+            <artifactId>sentry-service-client</artifactId>
+            <version>2.2.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.sentry</groupId>
+            <artifactId>sentry-service-api</artifactId>
+            <version>2.2.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 </project>

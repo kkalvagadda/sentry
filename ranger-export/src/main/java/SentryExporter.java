@@ -16,8 +16,12 @@
  * limitations under the License.
  */
 
+import org.apache.commons.cli.*;
 import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.security.authorization.plugin.*;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.ranger.admin.client.RangerAdminClient;
 import org.apache.ranger.admin.client.RangerAdminRESTClient;
 import org.apache.ranger.authorization.hadoop.config.RangerConfiguration;
@@ -26,15 +30,18 @@ import org.apache.ranger.authorization.utils.StringUtil;
 import org.apache.ranger.plugin.util.GrantRevokeRequest;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sentry.api.service.thrift.*;
+import org.apache.sentry.service.thrift.SentryServiceClientFactory;
 
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SentryExporter {
   enum HiveAccessType { NONE, CREATE, ALTER, DROP, INDEX, LOCK, SELECT, UPDATE, USE, READ, WRITE, ALL, ADMIN };
+  boolean doMigration = false;
+  String sentryConfig;
+  String rangerConfig;
+
   public static void main(String[] args) throws Exception {
     System.out.println("Test");
 
@@ -69,6 +76,73 @@ public class SentryExporter {
   }
 
   private static final Log LOG = LogFactory.getLog(SentryExporter.class);
+
+  private Configuration getSentryConf() {
+    Configuration conf = new Configuration();
+    conf.addResource(new Path(sentryConfig), true);
+    return conf;
+  }
+  private void execute() throws Exception {
+
+    RangerConfiguration configuration = RangerConfiguration.getInstance();
+    configuration.addResourcesForServiceType("hive");
+    String propertyPrefix    = "ranger.plugin." + "hive";
+
+    String serviceName = configuration.get(propertyPrefix + ".service.name");
+
+    Configuration conf = getSentryConf();
+
+    // Create ranger client
+    RangerAdminClient rangerClient = createAdminClient(serviceName, "hive", propertyPrefix);
+
+    try( SentryPolicyServiceClient client =
+                 SentryServiceClientFactory.create(conf)) {
+      String requestorName = "kkalyan";
+
+      // Fetch the permission mapping
+      Map<TSentryAuthorizable, Map<TSentryPrincipal, List<TPrivilege>>> mapping =
+              client.fetchPolicyMappings(requestorName);
+      for (Map.Entry<TSentryAuthorizable, Map<TSentryPrincipal, List<TPrivilege>>> permissionInfo : mapping.entrySet()) {
+        grantRangerPermission(permissionInfo.getKey(), permissionInfo.getValue());
+      }
+
+    } catch (Exception e) {
+
+    }
+  }
+
+  private void grantRangerPermission(TSentryAuthorizable authorizable, Map<TSentryPrincipal, List<TPrivilege>> permissions) {
+    // For each entry in the mapping create HivePrivilegeObject and grant principals with the privileges.
+    // Construct grant request
+    HivePrivilegeObject hivePrivObject = null;
+    if(!authorizable.getUri().isEmpty()) {
+      // URI permission
+    }
+    if(!authorizable.getColumn().isEmpty()) {
+      // Column permission
+      hivePrivObject = new HivePrivilegeObject(authorizable.getDb(), authorizable.getTable(),
+              Collections.singletonList(authorizable.getColumn()));
+    } else if(!authorizable.getTable().isEmpty()) {
+      // Table Permission
+      hivePrivObject = new HivePrivilegeObject(HivePrivilegeObject.HivePrivilegeObjectType.TABLE_OR_VIEW, authorizable.getDb(), authorizable.getTable());
+
+    } else if(!authorizable.getDb().isEmpty()) {
+      //Database Permission
+      hivePrivObject = new HivePrivilegeObject(HivePrivilegeObject.HivePrivilegeObjectType.DATABASE, authorizable.getDb(), "*");
+    } else if(!authorizable.getServer().isEmpty()) {
+      // Server level permission
+      hivePrivObject = new HivePrivilegeObject(HivePrivilegeObject.HivePrivilegeObjectType.GLOBAL, authorizable.getServer(), "*");
+    }
+
+    RangerResource resource = getHiveResource(HiveOperationType.GRANT_PRIVILEGE, hivePrivObject);
+
+    List<HivePrincipal> principals = new ArrayList<>();
+    for ( )
+    GrantRevokeRequest grantRequest = createGrantRevokeData(resource,
+            Collections.singletonList(new HivePrincipal("admin", HivePrincipal.HivePrincipalType.USER)),
+            Collections.singletonList(new HivePrivilege("SELECT", null)), false);
+  }
+
 
   private static RangerAdminClient createAdminClient(String rangerServiceName, String applicationId, String propertyPrefix) {
     if(LOG.isDebugEnabled()) {
@@ -252,5 +326,58 @@ public class SentryExporter {
       }
     }
     return ret;
+  }
+
+  /**
+   *  parse arguments
+   * <pre>
+   *   -sentry_conf <filepath>     sentry config file path
+   *   -m,--migrate
+   *   -ranger-conf <filepath> ranger config file path
+   * </pre>
+   * @param args
+   */
+  protected boolean parseArgs(String [] args) {
+    Options options = new Options();
+
+
+    Option migrateOpt = new Option("m", "migrate", false,
+            "Migrate Permission Information");
+    migrateOpt.setRequired(true);
+    options.addOption(migrateOpt);
+
+    // file path of sentry-site
+    Option sentrySitePathOpt = new Option("sentry_conf", "sentry-site file path");
+    sentrySitePathOpt.setRequired(true);
+    options.addOption(sentrySitePathOpt);
+
+    // file path of ranger configuration
+    Option rangerConf = new Option("ranger-conf", "Ranger configuration file path");
+    rangerConf.setRequired(true);
+    options.addOption(rangerConf);
+
+    try {
+      Parser parser = new GnuParser();
+
+      CommandLine cmd = parser.parse(options, args);
+
+      for (Option opt : cmd.getOptions()) {
+        if (opt.getOpt().equals("m")) {
+          doMigration = true;
+        } else if (opt.getOpt().equals("ranger-conf")) {
+          sentryConfig = opt.getValue();
+        } else if (opt.getOpt().equals("sentry_conf")) {
+          rangerConfig = opt.getValue();
+        }
+      }
+
+      if (!doMigration) {
+        throw new IllegalArgumentException("No action specified");
+      }
+    } catch (ParseException pe) {
+      System.out.println(pe.getMessage());
+      return false;
+    }
+    return true;
   }
 }

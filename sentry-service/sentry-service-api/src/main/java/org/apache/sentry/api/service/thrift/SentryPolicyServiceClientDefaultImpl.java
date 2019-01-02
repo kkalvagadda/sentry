@@ -1116,7 +1116,7 @@ public class SentryPolicyServiceClientDefaultImpl implements SentryPolicyService
   // export the sentry mapping data with map structure
   @Override
   public Map<TSentryAuthorizable,Map<TSentryPrincipal,List<TPrivilege>>> fetchPolicyMappings
-  (String requestorUserName, String remoteIp, long remotePort) throws SentryUserException {
+  (String requestorUserName) throws SentryUserException {
     TSentryExportMappingDataRequest request = new TSentryExportMappingDataRequest(
             ThriftConstants.TSENTRY_SERVICE_VERSION_CURRENT, requestorUserName);
     request.setAuthorizables(Collections.EMPTY_SET);

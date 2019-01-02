@@ -26,18 +26,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.sentry.SentryOwnerInfo;
-import org.apache.sentry.api.service.thrift.TSentryActiveRoleSet;
-import org.apache.sentry.api.service.thrift.TSentryAuthorizable;
-import org.apache.sentry.api.service.thrift.TSentryGroup;
-import org.apache.sentry.api.service.thrift.TSentryMappingData;
-import org.apache.sentry.api.service.thrift.TSentryPrivilege;
-import org.apache.sentry.api.service.thrift.TSentryPrivilegeMap;
-import org.apache.sentry.api.service.thrift.TSentryRole;
+import org.apache.sentry.api.service.thrift.*;
 import org.apache.sentry.core.common.exception.SentryInvalidInputException;
 import org.apache.sentry.core.common.exception.SentryNoSuchObjectException;
 import org.apache.sentry.hdfs.PathsUpdate;
 import org.apache.sentry.hdfs.UniquePathsUpdate;
 import org.apache.sentry.hdfs.Updateable.Update;
+import org.apache.sentry.hdfs.service.thrift.TPrivilegePrincipal;
 import org.apache.sentry.provider.db.service.classification.InterfaceAudience.Private;
 import org.apache.sentry.provider.db.service.model.MAuthzPathsMapping;
 import org.apache.sentry.provider.db.service.model.MSentryGroup;
@@ -322,6 +317,11 @@ public interface SentryStoreInterface {
   Map<String, Set<TSentryPrivilege>> getRoleNameTPrivilegesMap(final String dbName,
                                                                final String tableName)
     throws Exception;
+
+
+  Map<TSentryAuthorizable, Map<TPrivilegePrincipal, List<TPrivilege>>> getPrivilegesMap(final String dbName,
+    final String tableName) throws Exception;
+
 
   /** get mapping datas for [group,role], [user,role] with the specific roles */
   List<Map<String, Set<String>>> getGroupUserRoleMapList(final Collection<String> roleNames)

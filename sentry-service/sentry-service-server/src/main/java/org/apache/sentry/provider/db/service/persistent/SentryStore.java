@@ -53,6 +53,7 @@ import javax.jdo.Query;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.sentry.SentryOwnerInfo;
+import org.apache.sentry.api.service.thrift.*;
 import org.apache.sentry.core.common.exception.SentryAccessDeniedException;
 import org.apache.sentry.core.common.exception.SentryAlreadyExistsException;
 import org.apache.sentry.core.common.exception.SentryInvalidInputException;
@@ -82,14 +83,6 @@ import org.apache.sentry.provider.db.service.model.MSentryUtil;
 import org.apache.sentry.provider.db.service.model.MPath;
 import org.apache.sentry.hdfs.service.thrift.TPrivilegePrincipal;
 import org.apache.sentry.api.common.ApiConstants.PrivilegeScope;
-import org.apache.sentry.api.service.thrift.TSentryActiveRoleSet;
-import org.apache.sentry.api.service.thrift.TSentryAuthorizable;
-import org.apache.sentry.api.service.thrift.TSentryGrantOption;
-import org.apache.sentry.api.service.thrift.TSentryGroup;
-import org.apache.sentry.api.service.thrift.TSentryMappingData;
-import org.apache.sentry.api.service.thrift.TSentryPrivilege;
-import org.apache.sentry.api.service.thrift.TSentryPrivilegeMap;
-import org.apache.sentry.api.service.thrift.TSentryRole;
 import org.apache.sentry.service.common.SentryOwnerPrivilegeType;
 import org.apache.sentry.service.common.ServiceConstants.SentryPrincipalType;
 import org.apache.sentry.service.common.ServiceConstants.ServerConfig;
@@ -3992,6 +3985,72 @@ public class SentryStore implements SentryStoreInterface {
       mSentryPrivileges.addAll((List<MSentryPrivilege>) query.executeWithMap(authParamBuilder.getArguments()));
     }
     return mSentryPrivileges;
+  }
+
+  public Map<TSentryAuthorizable, Map<TPrivilegePrincipal, List<TPrivilege>>> getPrivilegesMap(final String dbName,
+  final String tableName) throws Exception {
+
+    return tm.executeTransaction(
+            pm -> {
+              List<MSentryPrivilege> mSentryPrivileges;
+              if(dbName != null || tableName != null) {
+                TSentryAuthorizable authorizable = new TSentryAuthorizable();
+                authorizable.setServer("server1");
+                authorizable.setDb(dbName);
+                authorizable.setTable(tableName);
+                mSentryPrivileges = getPrivilegesForAuthorizables(pm, Collections.singletonList(authorizable));
+              } else {
+                mSentryPrivileges = getPrivilegesForAuthorizables(pm, Collections.EMPTY_LIST);
+              }
+              return translatePrivileges(mSentryPrivileges);
+            });
+  }
+
+  private Map<TSentryAuthorizable, Map<TPrivilegePrincipal, List<TPrivilege>>> translatePrivileges(
+          Collection<MSentryPrivilege> mSentryPrivileges) {
+    if (mSentryPrivileges.isEmpty()) {
+      return Collections.emptyMap();
+    }
+    Map<TSentryAuthorizable, Map<TPrivilegePrincipal, List<TPrivilege>>> privilegesMap = new HashMap<>();
+    for (MSentryPrivilege mSentryPrivilege : mSentryPrivileges) {
+      TSentryPrivilege privilege = convertToTSentryPrivilege(mSentryPrivilege);
+      TSentryAuthorizable authorizable = new TSentryAuthorizable();
+      authorizable.setServer(privilege.getServerName());
+      authorizable.setDb(privilege.getDbName());
+      authorizable.setTable(privilege.getTableName());
+      authorizable.setColumn(privilege.getColumnName());
+      authorizable.setUri(privilege.getURI());
+
+      if (!privilegesMap.containsKey(authorizable)) {
+        privilegesMap.put(authorizable, new HashMap<>());
+      }
+      TPrivilege tPrivilege = new TPrivilege();
+      tPrivilege.setAction(mSentryPrivilege.getAction());
+      //TODO
+      tPrivilege.setGrantOption(TSentryGrantOption.FALSE);
+      tPrivilege.setCreateTime(mSentryPrivilege.getCreateTime());
+
+      for (MSentryRole role : mSentryPrivilege.getRoles()) {
+        TPrivilegePrincipal principal = new TPrivilegePrincipal();
+        principal.setType(TPrivilegePrincipalType.ROLE);
+        principal.setValue(role.getRoleName());
+        if (!privilegesMap.get(authorizable).containsKey(principal)) {
+          privilegesMap.get(authorizable).put(principal, new ArrayList<>());
+        }
+        privilegesMap.get(authorizable).get(principal).add(tPrivilege);
+      }
+
+      for (MSentryUser user : mSentryPrivilege.getUsers()) {
+        TPrivilegePrincipal principal = new TPrivilegePrincipal();
+        principal.setType(TPrivilegePrincipalType.USER);
+        principal.setValue(user.getUserName());
+        if (!privilegesMap.get(authorizable).containsKey(principal)) {
+          privilegesMap.get(authorizable).put(principal, new ArrayList<>());
+        }
+        privilegesMap.get(authorizable).get(principal).add(tPrivilege);
+      }
+    }
+    return privilegesMap;
   }
 
   /**

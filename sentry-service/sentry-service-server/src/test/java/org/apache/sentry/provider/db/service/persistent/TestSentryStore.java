@@ -47,7 +47,7 @@ import org.apache.hadoop.security.alias.CredentialProviderFactory;
 import org.apache.hadoop.security.alias.UserProvider;
 import org.apache.sentry.SentryOwnerInfo;
 import org.apache.sentry.api.common.ApiConstants.PrivilegeScope;
-import org.apache.sentry.api.service.thrift.TSentryPrivilegeMap;
+import org.apache.sentry.api.service.thrift.*;
 import org.apache.sentry.core.common.exception.SentryAccessDeniedException;
 import org.apache.sentry.core.common.exception.SentryInvalidInputException;
 import org.apache.sentry.core.common.utils.SentryConstants;
@@ -70,12 +70,6 @@ import org.apache.sentry.provider.db.service.model.MSentryPathChange;
 import org.apache.sentry.provider.db.service.model.MSentryPrivilege;
 import org.apache.sentry.provider.db.service.model.MSentryRole;
 import org.apache.sentry.provider.db.service.model.MPath;
-import org.apache.sentry.api.service.thrift.TSentryActiveRoleSet;
-import org.apache.sentry.api.service.thrift.TSentryAuthorizable;
-import org.apache.sentry.api.service.thrift.TSentryGrantOption;
-import org.apache.sentry.api.service.thrift.TSentryGroup;
-import org.apache.sentry.api.service.thrift.TSentryPrivilege;
-import org.apache.sentry.api.service.thrift.TSentryRole;
 import org.apache.sentry.provider.db.service.model.MSentryUser;
 import org.apache.sentry.provider.file.PolicyFile;
 import org.apache.sentry.api.common.SentryServiceUtil;
@@ -1942,6 +1936,130 @@ public class TestSentryStore extends org.junit.Assert {
     assertEquals(4, privilege.size());
   }
 
+  @Test
+  public void testTranslatePrivileges() throws Exception {
+    String roleName1 = "list-privs-r1";
+    String userName1 = "user1";
+    String uri1 = "file:///var/folders/dt/9zm44z9s6bjfxbrm4v36lzdc0000gp/T/1401860678102-0/data/kv1.dat";
+
+    sentryStore.createSentryRole(roleName1);
+    sentryStore.createSentryUser(userName1);
+
+    TSentryPrivilege privilege_tbl1 = new TSentryPrivilege();
+    privilege_tbl1.setPrivilegeScope("TABLE");
+    privilege_tbl1.setServerName("server1");
+    privilege_tbl1.setDbName("db1");
+    privilege_tbl1.setTableName("tbl1");
+    privilege_tbl1.setCreateTime(System.currentTimeMillis());
+    privilege_tbl1.setAction("SELECT");
+    privilege_tbl1.setGrantOption(TSentryGrantOption.TRUE);
+
+    TSentryAuthorizable tSentryAuthorizable = new TSentryAuthorizable();
+    tSentryAuthorizable.setServer("server1");
+    tSentryAuthorizable.setDb("db1");
+    tSentryAuthorizable.setTable("tbl1");
+
+
+    TSentryPrivilege privilege_tbl2 = new TSentryPrivilege();
+    privilege_tbl2.setPrivilegeScope("TABLE");
+    privilege_tbl2.setServerName("server1");
+    privilege_tbl2.setDbName("db1");
+    privilege_tbl2.setTableName("tbl2");
+    privilege_tbl2.setCreateTime(System.currentTimeMillis());
+    privilege_tbl2.setAction("SELECT");
+    privilege_tbl2.setGrantOption(TSentryGrantOption.TRUE);
+
+    TSentryAuthorizable tSentryAuthorizable2 = new TSentryAuthorizable();
+    tSentryAuthorizable2.setServer("server1");
+    tSentryAuthorizable2.setDb("db1");
+    tSentryAuthorizable2.setTable("tbl2");
+
+    TSentryPrivilege privilege_col1 = new TSentryPrivilege(privilege_tbl2);
+    privilege_col1.setPrivilegeScope("TABLE");
+    privilege_col1.setServerName("server1");
+    privilege_col1.setDbName("db3");
+    privilege_col1.setTableName("tbl3");
+    privilege_col1.setCreateTime(System.currentTimeMillis());
+    privilege_col1.setAction("SELECT");
+    privilege_col1.setGrantOption(TSentryGrantOption.TRUE);
+    privilege_col1.setColumnName("Column1");
+
+    TSentryAuthorizable tSentryAuthorizable3 = new TSentryAuthorizable();
+    tSentryAuthorizable3.setServer("server1");
+    tSentryAuthorizable3.setDb("db3");
+    tSentryAuthorizable3.setTable("tbl3");
+    tSentryAuthorizable3.setColumn("Column1");
+
+    TSentryPrivilege tSentryUriPrivilege = new TSentryPrivilege("URI", "server1", "ALL");
+    tSentryUriPrivilege.setURI(uri1);
+
+    TSentryAuthorizable tSentryUriAuthorizable = new TSentryAuthorizable();
+    tSentryUriAuthorizable.setUri(uri1);
+    tSentryUriAuthorizable.setServer("server1");
+
+
+    sentryStore.alterSentryGrantPrivileges(SentryPrincipalType.ROLE, roleName1, Sets.newHashSet(privilege_tbl1,privilege_tbl2, privilege_col1, tSentryUriPrivilege), null);
+
+    // Grant user1 same privileges granted to role1 and make sure that there are no duplicates in the privileges.
+    sentryStore.alterSentryGrantPrivileges(SentryPrincipalType.USER, userName1, Sets.newHashSet(privilege_tbl1,privilege_tbl2, tSentryUriPrivilege), null);
+
+    Map<TSentryAuthorizable, Map<TPrivilegePrincipal, List<TPrivilege>>> mapping = sentryStore.getPrivilegesMap(null, null);
+
+    assertNotNull(mapping);
+    assertEquals(4, mapping.size());
+
+    TSentryAuthorizable authorizable = new TSentryAuthorizable();
+    TPrivilegePrincipal rolePrincipal = new TPrivilegePrincipal();
+    rolePrincipal.setType(TPrivilegePrincipalType.ROLE);
+    rolePrincipal.setValue(roleName1);
+    TPrivilegePrincipal userPrincipal = new TPrivilegePrincipal();
+    userPrincipal.setType(TPrivilegePrincipalType.USER);
+    userPrincipal.setValue(userName1);
+    authorizable.setServer("server1");
+    authorizable.setDb("db1");
+    authorizable.setTable("tbl1");
+    authorizable.setUri("");
+    authorizable.setColumn("");
+  //  TPrivilege tPrivilege = new TPrivilege();
+    assertTrue(mapping.containsKey(authorizable));
+    assertEquals(2, mapping.get(authorizable).size());
+    assertEquals(1, mapping.get(authorizable).get(rolePrincipal).size());
+//    assertTrue(mapping.get(authorizable).get(rolePrincipal).contains("select"));
+    assertEquals(1, mapping.get(authorizable).get(userPrincipal).size());
+//    assertTrue(mapping.get(authorizable).get(userPrincipal).contains("select"));
+
+    authorizable.setTable("tbl2");
+    assertTrue(mapping.containsKey(authorizable));
+    assertEquals(2, mapping.get(authorizable).size());
+    assertEquals(1, mapping.get(authorizable).get(rolePrincipal).size());
+//    assertTrue(mapping.get(authorizable).get(rolePrincipal).contains("select"));
+    assertEquals(1, mapping.get(authorizable).get(userPrincipal).size());
+//    assertTrue(mapping.get(authorizable).get(userPrincipal).contains("select"));
+
+    authorizable.setDb("db3");
+    authorizable.setTable("tbl3");
+    authorizable.setColumn("column1");
+    assertTrue(mapping.containsKey(authorizable));
+    assertEquals(1, mapping.get(authorizable).size());
+    assertEquals(1, mapping.get(authorizable).get(rolePrincipal).size());
+//    assertTrue(mapping.get(authorizable).get(rolePrincipal).contains("select"));
+
+    authorizable.clear();
+    authorizable.setDb("");
+    authorizable.setTable("");
+    authorizable.setColumn("");
+    authorizable.setServer("server1");
+
+    authorizable.setUri(uri1);
+
+    assertTrue(mapping.containsKey(authorizable));
+    assertEquals(2, mapping.get(authorizable).size());
+    assertEquals(1, mapping.get(authorizable).get(rolePrincipal).size());
+//    assertTrue(mapping.get(authorizable).get(rolePrincipal).contains("all"));
+    assertEquals(1, mapping.get(authorizable).get(userPrincipal).size());
+//    assertTrue(mapping.get(authorizable).get(userPrincipal).contains("all"));
+
+  }
 
   @Test
   public void testgetPrivilegesForURIs() throws Exception {

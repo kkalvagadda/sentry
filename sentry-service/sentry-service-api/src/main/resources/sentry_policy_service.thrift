@@ -305,6 +305,11 @@ struct TSentryMappingData {
 3: optional map<string, set<string>> userRolesMap                  # for the userName -> role mapping
 }
 
+struct TSentryPermissionMappingData {
+1: optional map<string, set<string>> groupRolesMap,                # for the groupName -> role mapping
+2: optional map<TSentryAuthorizable, map<TSentryPrincipal, list<TPrivilege>>> permissionMapping
+}
+
 struct TSentryExportMappingDataRequest {
 1: required i32 protocol_version = sentry_common_service.TSENTRY_SERVICE_V1,
 2: required string requestorUserName, # user on whose behalf the request is issued
@@ -314,6 +319,11 @@ struct TSentryExportMappingDataRequest {
 struct TSentryExportMappingDataResponse {
 1: required sentry_common_service.TSentryResponseStatus status,
 2: required TSentryMappingData mappingData
+}
+
+struct TSentryExportPermissionsMappingDataResponse {
+1: required sentry_common_service.TSentryResponseStatus status,
+2: required TSentryPermissionMappingData mappingData
 }
 
 struct TSentryImportMappingDataRequest {
@@ -444,6 +454,9 @@ service SentryPolicyService
 
   # export the mapping data in sentry
   TSentryExportMappingDataResponse export_sentry_mapping_data(1:TSentryExportMappingDataRequest request);
+
+  # export the permission mapping data in sentry
+  TSentryExportPermissionsMappingDataResponse export_sentry_permission_mapping_data(1:TSentryExportMappingDataRequest request);
 
   # import the mapping data in sentry
   TSentryImportMappingDataResponse import_sentry_mapping_data(1:TSentryImportMappingDataRequest request);

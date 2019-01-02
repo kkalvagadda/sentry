@@ -3987,7 +3987,7 @@ public class SentryStore implements SentryStoreInterface {
     return mSentryPrivileges;
   }
 
-  public Map<TSentryAuthorizable, Map<TPrivilegePrincipal, List<TPrivilege>>> getPrivilegesMap(final String dbName,
+  public Map<TSentryAuthorizable, Map<TSentryPrincipal, List<TPrivilege>>> getPrivilegesMap(final String dbName,
   final String tableName) throws Exception {
 
     return tm.executeTransaction(
@@ -4006,12 +4006,12 @@ public class SentryStore implements SentryStoreInterface {
             });
   }
 
-  private Map<TSentryAuthorizable, Map<TPrivilegePrincipal, List<TPrivilege>>> translatePrivileges(
+  private Map<TSentryAuthorizable, Map<TSentryPrincipal, List<TPrivilege>>> translatePrivileges(
           Collection<MSentryPrivilege> mSentryPrivileges) {
     if (mSentryPrivileges.isEmpty()) {
       return Collections.emptyMap();
     }
-    Map<TSentryAuthorizable, Map<TPrivilegePrincipal, List<TPrivilege>>> privilegesMap = new HashMap<>();
+    Map<TSentryAuthorizable, Map<TSentryPrincipal, List<TPrivilege>>> privilegesMap = new HashMap<>();
     for (MSentryPrivilege mSentryPrivilege : mSentryPrivileges) {
       TSentryPrivilege privilege = convertToTSentryPrivilege(mSentryPrivilege);
       TSentryAuthorizable authorizable = new TSentryAuthorizable();
@@ -4031,9 +4031,9 @@ public class SentryStore implements SentryStoreInterface {
       tPrivilege.setCreateTime(mSentryPrivilege.getCreateTime());
 
       for (MSentryRole role : mSentryPrivilege.getRoles()) {
-        TPrivilegePrincipal principal = new TPrivilegePrincipal();
-        principal.setType(TPrivilegePrincipalType.ROLE);
-        principal.setValue(role.getRoleName());
+        TSentryPrincipal principal = new TSentryPrincipal();
+        principal.setType(TSentryPrincipalType.ROLE);
+        principal.setName(role.getRoleName());
         if (!privilegesMap.get(authorizable).containsKey(principal)) {
           privilegesMap.get(authorizable).put(principal, new ArrayList<>());
         }
@@ -4041,9 +4041,9 @@ public class SentryStore implements SentryStoreInterface {
       }
 
       for (MSentryUser user : mSentryPrivilege.getUsers()) {
-        TPrivilegePrincipal principal = new TPrivilegePrincipal();
-        principal.setType(TPrivilegePrincipalType.USER);
-        principal.setValue(user.getUserName());
+        TSentryPrincipal principal = new TSentryPrincipal();
+        principal.setType(TSentryPrincipalType.USER);
+        principal.setName(user.getUserName());
         if (!privilegesMap.get(authorizable).containsKey(principal)) {
           privilegesMap.get(authorizable).put(principal, new ArrayList<>());
         }

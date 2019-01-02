@@ -1376,6 +1376,68 @@ public class SentryPolicyStoreProcessor implements SentryPolicyService.Iface {
     return response;
   }
 
+  // get the sentry mapping data and return the data with map structure
+  @Override
+  @SuppressWarnings("PMD.AvoidBranchingStatementAsLastInLoop")
+  public TSentryExportPermissionsMappingDataResponse export_sentry_permission_mapping_data(
+          TSentryExportMappingDataRequest request) throws TException {
+    TSentryExportPermissionsMappingDataResponse response = new TSentryExportPermissionsMappingDataResponse();
+    try {
+      String requestor = request.getRequestorUserName();
+      Set<String> memberGroups = getRequestorGroups(requestor);
+      String databaseName = null;
+      String tableName = null;
+
+      if(request.getAuthorizables() != null && request.getAuthorizables().size() > 0) {
+        for (TSentryAuthorizable authorizable : request.getAuthorizables()) {
+          databaseName = authorizable.getDb();
+          tableName = authorizable.getTable();
+          // TODO This change is added to maintain the current functionality.
+          // This code will be updated sentry sentry client/server are enhanced to handle export og permissions for
+          // multiple authorizables.
+          break;
+        }
+      }
+      if (!inAdminGroups(memberGroups)) {
+        // disallow non-admin to import the metadata of sentry
+        throw new SentryAccessDeniedException("Access denied to " + requestor
+                + " for export the metadata of sentry.");
+      }
+      TSentryPermissionMappingData tSentryPermissionMappingData = new TSentryPermissionMappingData();
+      Map<TSentryAuthorizable, Map<TSentryPrincipal, List<TPrivilege>>> mappingData =
+              sentryStore.getPrivilegesMap (databaseName, tableName);
+
+      tSentryPermissionMappingData.setPermissionMapping(mappingData);
+
+
+//      // roleNames should be null if databaseName == null and tableName == null
+//      if (databaseName == null && tableName == null) {
+//        roleNames = null;
+//      }
+      List<Map<String, Set<String>>> mapList = sentryStore.getGroupUserRoleMapList(
+              null);
+
+      tSentryPermissionMappingData.setGroupRolesMap(mapList.get(
+              SentryConstants.INDEX_GROUP_ROLES_MAP));
+
+      response.setMappingData(tSentryPermissionMappingData);
+      response.setStatus(Status.OK());
+    } catch (SentryAccessDeniedException e) {
+      LOGGER.error(e.getMessage(), e);
+      response.setStatus(Status.AccessDenied(e.getMessage(), e));
+    } catch (SentryGroupNotFoundException e) {
+      LOGGER.error(e.getMessage(), e);
+      response.setStatus(Status.AccessDenied(e.getMessage(), e));
+    } catch (Exception e) {
+      String msg = "Unknown error for request: " + request + ", message: " + e.getMessage();
+      LOGGER.error(msg, e);
+      response.setMappingData(new TSentryPermissionMappingData());
+      response.setStatus(Status.RuntimeError(msg, e));
+    }
+    return response;
+  }
+
+
   // import the sentry mapping data
   @Override
   public TSentryImportMappingDataResponse import_sentry_mapping_data(

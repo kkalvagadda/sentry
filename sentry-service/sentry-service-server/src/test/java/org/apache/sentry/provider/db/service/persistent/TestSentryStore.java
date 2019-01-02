@@ -2003,7 +2003,7 @@ public class TestSentryStore extends org.junit.Assert {
     // Grant user1 same privileges granted to role1 and make sure that there are no duplicates in the privileges.
     sentryStore.alterSentryGrantPrivileges(SentryPrincipalType.USER, userName1, Sets.newHashSet(privilege_tbl1,privilege_tbl2, tSentryUriPrivilege), null);
 
-    Map<TSentryAuthorizable, Map<TPrivilegePrincipal, List<TPrivilege>>> mapping = sentryStore.getPrivilegesMap(null, null);
+    Map<TSentryAuthorizable, Map<TSentryPrincipal, List<TPrivilege>>> mapping = sentryStore.getPrivilegesMap(null, null);
 
     assertNotNull(mapping);
     assertEquals(4, mapping.size());

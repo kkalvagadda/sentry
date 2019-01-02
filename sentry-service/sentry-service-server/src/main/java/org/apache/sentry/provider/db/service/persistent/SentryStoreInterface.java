@@ -32,7 +32,6 @@ import org.apache.sentry.core.common.exception.SentryNoSuchObjectException;
 import org.apache.sentry.hdfs.PathsUpdate;
 import org.apache.sentry.hdfs.UniquePathsUpdate;
 import org.apache.sentry.hdfs.Updateable.Update;
-import org.apache.sentry.hdfs.service.thrift.TPrivilegePrincipal;
 import org.apache.sentry.provider.db.service.classification.InterfaceAudience.Private;
 import org.apache.sentry.provider.db.service.model.MAuthzPathsMapping;
 import org.apache.sentry.provider.db.service.model.MSentryGroup;
@@ -319,7 +318,7 @@ public interface SentryStoreInterface {
     throws Exception;
 
 
-  Map<TSentryAuthorizable, Map<TPrivilegePrincipal, List<TPrivilege>>> getPrivilegesMap(final String dbName,
+  Map<TSentryAuthorizable, Map<TSentryPrincipal, List<TPrivilege>>> getPrivilegesMap(final String dbName,
     final String tableName) throws Exception;
 
 

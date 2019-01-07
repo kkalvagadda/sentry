@@ -38,6 +38,9 @@ import org.apache.ranger.plugin.util.RangerServiceNotFoundException;
 import org.apache.ranger.plugin.util.ServicePolicies;
 import org.apache.ranger.plugin.util.ServiceTags;
 import org.apache.ranger.plugin.model.RangerPolicy;
+import org.apache.sentry.api.service.thrift.TPrivilege;
+import org.apache.sentry.api.service.thrift.TSentryPrincipal;
+import org.apache.sentry.api.service.thrift.TSentryPrincipalType;
 
 import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.ParameterizedType;
@@ -164,6 +167,95 @@ public class RangerSentryRESTClient implements RangerAdminClient {
     }
 
     return ret;
+  }
+
+  public long ingestPolicy(RangerResource resource, Map<TSentryPrincipal, List<TPrivilege>> permissions) throws Exception {
+    Random random = new Random();
+    RangerPolicy policyCreated = null;
+    ClientResponse response = null;
+    UserGroupInformation user = MiscUtil.getUGILoginUser();
+    boolean isSecureMode = user != null && UserGroupInformation.isSecurityEnabled();
+    WebResource webResource = null;
+    // create policy ( working)
+    webResource = createWebResource("/service/plugins/policies");
+    webResource.addFilter(new HTTPBasicAuthFilter("admin", "hortonworks1"));
+    Map<String, RangerPolicy.RangerPolicyResource> resources = new HashMap<>();
+
+    RangerPolicy.RangerPolicyItem rangerPolicyItem;
+    switch (resource.getObjectType()) {
+      case DATABASE:
+        resources.put("database", new RangerPolicy.RangerPolicyResource(resource.getDatabase()));
+        break;
+      case COLUMN:
+        resources.put("database", new RangerPolicy.RangerPolicyResource(resource.getDatabase()));
+        resources.put("table", new RangerPolicy.RangerPolicyResource(resource.getTable()));
+        resources.put("column", new RangerPolicy.RangerPolicyResource(resource.getColumn()));
+        break;
+      case TABLE:
+      case VIEW:
+      case INDEX:
+      case PARTITION:
+        resources.put("database", new RangerPolicy.RangerPolicyResource(resource.getDatabase()));
+        resources.put("table", new RangerPolicy.RangerPolicyResource(resource.getTable()));
+        break;
+      case URI:
+        //TODO
+//          resources.put("database", new RangerPolicy.RangerPolicyResource(resource.getDatabase()));
+//          resources.put("table", new RangerPolicy.RangerPolicyResource(resource.getTable()));
+        break;
+      case NONE:
+      default:
+        break;
+    }
+    RangerPolicy policy = new RangerPolicy();
+    policy.setService("Sandbox_hive");
+    policy.setName(String.valueOf(random.nextInt(Integer.SIZE - 1)));
+    policy.setDescription("created by kalyan");
+    policy.setIsAuditEnabled(false);
+    policy.setCreatedBy("admin");
+    policy.setResources(resources);
+
+    for (Map.Entry<TSentryPrincipal, List<TPrivilege>> permission : permissions.entrySet()) {
+      rangerPolicyItem = new RangerPolicy.RangerPolicyItem();
+      for (TPrivilege privilege : permission.getValue()) {
+        rangerPolicyItem.getAccesses().add(new RangerPolicy.RangerPolicyItemAccess(privilege.getAction(), true));
+      }
+      if (permission.getKey().getType() == TSentryPrincipalType.GROUP) {
+        rangerPolicyItem.getGroups().add(permission.getKey().getName());
+      } else if (permission.getKey().getType() == TSentryPrincipalType.USER) {
+        rangerPolicyItem.getUsers().add(permission.getKey().getName());
+      } else {
+        throw new Exception("Invalid Principal Type");
+      }
+      rangerPolicyItem.setDelegateAdmin(false);
+      policy.getPolicyItems().add(rangerPolicyItem);
+    }
+
+    response = webResource.accept(RangerRESTUtils.REST_EXPECTED_MIME_TYPE).type(RangerRESTUtils.REST_EXPECTED_MIME_TYPE)
+            .post(ClientResponse.class,
+                    restClient.toJson(policy));
+
+    if (response != null && response.getStatus() != HttpServletResponse.SC_OK) {
+      RESTResponse resp = RESTResponse.fromClientResponse(response);
+      LOG.error("grantAccess() failed: HTTP status=" + response.getStatus() + ", message=" + resp.getMessage() + ", isSecure=" + isSecureMode + (isSecureMode ? (", user=" + user) : ""));
+
+      if (response.getStatus() == HttpServletResponse.SC_UNAUTHORIZED) {
+        throw new AccessControlException();
+      }
+
+      throw new Exception("HTTP " + response.getStatus() + " Error: " + resp.getMessage());
+    } else if (response == null) {
+      throw new Exception("unknown error during grantAccess. serviceName=" + serviceName);
+    } else if (response.getStatus() == HttpServletResponse.SC_OK) {
+      // RESTResponse resp = RESTResponse.fromClientResponse(response);
+      policyCreated = response.getEntity(RangerPolicy.class);
+      LOG.error("Policy is created with id %s" + policyCreated.getId());
+    }
+    if(policyCreated != null) {
+      return policyCreated.getId();
+    } else {
+      throw new Exception("Ingestion failed");
+    }
   }
 
   @Override

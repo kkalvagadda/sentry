@@ -21,8 +21,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.security.authorization.plugin.*;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.ranger.admin.client.RangerAdminClient;
 import org.apache.ranger.admin.client.RangerAdminRESTClient;
 import org.apache.ranger.authorization.hadoop.config.RangerConfiguration;
 import org.apache.ranger.authorization.hive.authorizer.RangerHiveResource;
@@ -45,34 +43,11 @@ public class SentryExporter {
   public static void main(String[] args) throws Exception {
     System.out.println("Test");
 
-    // Initialize
+    SentryExporter exporter = new SentryExporter();
 
-    RangerConfiguration configuration = RangerConfiguration.getInstance();
-    configuration.addResourcesForServiceType("hive");
-    String propertyPrefix    = "ranger.plugin." + "hive";
+    exporter.parseArgs(args);
 
-    String serviceName = configuration.get(propertyPrefix + ".service.name");
-
-    // Connect to sentry server
-
-    // Fetch the permission mapping
-
-
-    // Create ranger client
-    RangerAdminClient client = createAdminClient(serviceName, "hive", propertyPrefix);
-    // Try to connect to server
-
-    // For each entry in the mapping create HivePrivilegeObject and grant principals with the privileges.
-    // Construct grant request
-    HivePrivilegeObject hivePrivObject = new HivePrivilegeObject(HivePrivilegeObject.HivePrivilegeObjectType.TABLE_OR_VIEW,
-            "default", "default");
-    RangerResource resource = getHiveResource(HiveOperationType.GRANT_PRIVILEGE, hivePrivObject);
-
-    GrantRevokeRequest grantRequest = createGrantRevokeData(resource,
-            Collections.singletonList(new HivePrincipal("admin", HivePrincipal.HivePrincipalType.USER)),
-            Collections.singletonList(new HivePrivilege("SELECT", null)), false);
-    // Send a request to server
-    client.grantAccess(grantRequest);
+    exporter.execute();
   }
 
   private static final Log LOG = LogFactory.getLog(SentryExporter.class);
@@ -84,6 +59,7 @@ public class SentryExporter {
   }
   private void execute() throws Exception {
 
+    List<Long> policyIdsIngested = new ArrayList<>();
     RangerConfiguration configuration = RangerConfiguration.getInstance();
     configuration.addResourcesForServiceType("hive");
     String propertyPrefix    = "ranger.plugin." + "hive";
@@ -93,7 +69,7 @@ public class SentryExporter {
     Configuration conf = getSentryConf();
 
     // Create ranger client
-    RangerAdminClient rangerClient = createAdminClient(serviceName, "hive", propertyPrefix);
+    RangerSentryRESTClient rangerClient = createAdminClient(serviceName, "hive", propertyPrefix);
 
     try( SentryPolicyServiceClient client =
                  SentryServiceClientFactory.create(conf)) {
@@ -103,7 +79,8 @@ public class SentryExporter {
       Map<TSentryAuthorizable, Map<TSentryPrincipal, List<TPrivilege>>> mapping =
               client.fetchPolicyMappings(requestorName);
       for (Map.Entry<TSentryAuthorizable, Map<TSentryPrincipal, List<TPrivilege>>> permissionInfo : mapping.entrySet()) {
-        grantRangerPermission(permissionInfo.getKey(), permissionInfo.getValue());
+        long policyIdIngested = grantRangerPermission(rangerClient, permissionInfo.getKey(), permissionInfo.getValue());
+        policyIdsIngested.add(policyIdIngested);
       }
 
     } catch (Exception e) {
@@ -111,12 +88,15 @@ public class SentryExporter {
     }
   }
 
-  private void grantRangerPermission(TSentryAuthorizable authorizable, Map<TSentryPrincipal, List<TPrivilege>> permissions) {
+  private long grantRangerPermission(RangerSentryRESTClient rangerClient, TSentryAuthorizable authorizable,
+                                     Map<TSentryPrincipal, List<TPrivilege>> permissions) throws Exception {
     // For each entry in the mapping create HivePrivilegeObject and grant principals with the privileges.
     // Construct grant request
     HivePrivilegeObject hivePrivObject = null;
     if(!authorizable.getUri().isEmpty()) {
       // URI permission
+      //TODO
+      throw new Exception("URI permission not supported");
     }
     if(!authorizable.getColumn().isEmpty()) {
       // Column permission
@@ -136,20 +116,16 @@ public class SentryExporter {
 
     RangerResource resource = getHiveResource(HiveOperationType.GRANT_PRIVILEGE, hivePrivObject);
 
-    List<HivePrincipal> principals = new ArrayList<>();
-    for ( )
-    GrantRevokeRequest grantRequest = createGrantRevokeData(resource,
-            Collections.singletonList(new HivePrincipal("admin", HivePrincipal.HivePrincipalType.USER)),
-            Collections.singletonList(new HivePrivilege("SELECT", null)), false);
+    return rangerClient.ingestPolicy(resource, permissions);
   }
 
 
-  private static RangerAdminClient createAdminClient(String rangerServiceName, String applicationId, String propertyPrefix) {
+  private static RangerSentryRESTClient createAdminClient(String rangerServiceName, String applicationId, String propertyPrefix) {
     if(LOG.isDebugEnabled()) {
       LOG.debug("==> RangerBasePlugin.createAdminClient(" + rangerServiceName + ", " + applicationId + ", " + propertyPrefix + ")");
     }
 
-    RangerAdminClient ret = null;
+    RangerSentryRESTClient ret = null;
 
     String propertyName = propertyPrefix + ".policy.source.impl";
     String policySourceImpl = RangerConfiguration.getInstance().get(propertyName);
@@ -264,7 +240,7 @@ public class SentryExporter {
     return objType;
   }
 
-  private static GrantRevokeRequest createGrantRevokeData(RangerResource resource,
+  public static GrantRevokeRequest createGrantRevokeData(RangerResource resource,
                                                    List<HivePrincipal> hivePrincipals,
                                                    List<HivePrivilege> hivePrivileges,
                                                    boolean             grantOption)
@@ -337,7 +313,7 @@ public class SentryExporter {
    * </pre>
    * @param args
    */
-  protected boolean parseArgs(String [] args) {
+  protected boolean parseArgs(String [] args) throws Exception {
     Options options = new Options();
 
 

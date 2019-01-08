@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+<configuration>
+  <property>
+    <name>sentry.service.server.rpc-address</name>
+    <value>localhost</value>
+  </property>
+  <property>
+    <name>sentry.service.server.rpc-port</name>
+    <value>8038</value>
+  </property>
+  <!-- Client finds Sentry server using sentry.service.client.server.rpc-address -->
+  <property>
+    <name>sentry.service.client.server.rpc-addresses</name>
+    <value>localhost:8038</value>
+  </property>
+  <property>
+    <name>sentry.service.security.mode</name>
+    <value>none</value>
+  </property>
+  <property>
+    <name>sentry.service.admin.group</name>
+    <value>hive,impala,hue,solr,kafka,kkalyan</value>
+  </property>
+  <property>
+    <name>sentry.service.allow.connect</name>
+    <value>hive,impala,hue,hdfs,solr,kafka, kkalyan</value>
+  </property>
+  <property>
+    <name>sentry.store.group.mapping</name>
+    <value>org.apache.sentry.provider.file.LocalGroupMappingService</value>
+  </property>
+  <!-- Put location of the group mapping file -->
+  <property>
+    <name>sentry.store.group.mapping.resource</name>
+    <value>/Users/kkalyan/source_repo/maven_sentry/sentry_cdh/start_sentry/users.ini</value>
+  </property>
+  <property>
+    <name>sentry.service.server.keytab</name>
+    <value>sentry.keytab</value>
+  </property>
+  <property>
+    <name>sentry.store.jdbc.url</name>
+    <value>jdbc:mysql://localhost/sentrydb?createDatabaseIfNotExist=true</value>
+  </property>
+  <property>
+    <name>sentry.store.jdbc.driver</name>
+    <value>com.mysql.jdbc.Driver</value>
+  </property>
+  <property>
+    <name>sentry.store.jdbc.user</name>
+    <value>root</value>
+  </property>
+  <property>
+    <name>sentry.store.jdbc.password</name>
+    <value>cloudera</value>
+  </property>
+  <property>
+    <name>sentry.service.processor.factories</name>  
+  <value>org.apache.sentry.api.service.thrift.SentryPolicyStoreProcessorFactory,org.apache.sentry.hdfs.SentryHDFSServiceProcessorFactory</value>
+  </property>
+  <property>
+    <name>sentry.policy.store.plugins</name>
+    <value>org.apache.sentry.hdfs.SentryPlugin</value>
+  </property>
+  <property>
+    <name>sentry.hdfs.integration.path.prefixes</name>
+    <value>/user/hive/warehouse</value>
+  </property>
+  <property>
+    <name>sentry.service.web.enable</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>sentry.service.web.port</name>
+    <value>29000</value>
+  </property>
+  <property>
+    <name>sentry.service.web.authentication.type</name>
+    <value>NONE</value>
+  </property>
+  <property>
+    <name>sentry.hive.sync.create</name>
+    <value>true</value>
+  </property>
+</configuration>

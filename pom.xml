@@ -1216,6 +1216,7 @@ limitations under the License.
                   <!-- Lombok Config File -->
                   <exclude>lombok.config</exclude>
                   <exclude>**/*.attach*</exclude>
+                  <exclude>**/sentry-site.xml</exclude>
                 </excludes>
               </configuration>
             </execution>

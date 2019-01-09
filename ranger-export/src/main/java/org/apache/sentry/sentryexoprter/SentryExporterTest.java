@@ -23,6 +23,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class SentryExporterTest {
   @Before
@@ -41,8 +44,8 @@ public class SentryExporterTest {
    args[1] = "-s sentry-site.xml";
    args[2] = "-r ranger-hive-security.xml";
    SentryExporter exporter = new SentryExporter(args);
-   exporter.setRangerConfig("/Users/kkalyan/source_repo/maven_sentry/sentry_cdh/sentry/ranger-export/src/main/resources/ranger-hive-security.xml");
-   exporter.setSentryConfig("/Users/kkalyan/source_repo/maven_sentry/sentry_cdh/sentry/ranger-export/src/main/resources/sentry-site.xml");
+   exporter.setRangerConfig("/Users/loanermbp7345/sentry/ranger-export/src/main/resources/ranger-hive-security.xml");
+   exporter.setSentryConfig("/Users/loanermbp7345/sentry/ranger-export/src/main/resources/sentry-site.xml");
    //validate sentry configuration
    Assert.assertNotNull(exporter.sentryConfig);
    //validate ranger configuration
@@ -50,4 +53,24 @@ public class SentryExporterTest {
 
    exporter.execute();
  }
+
+    @Test
+    public void testRevoke() throws Exception {
+        String[] args = new String[3];
+        args[0] = "-m ";
+        args[1] = "-s sentry-site.xml";
+        args[2] = "-r ranger-hive-security.xml";
+        SentryExporter exporter = new SentryExporter(args);
+        exporter.setRangerConfig("/Users/loanermbp7345/sentry/ranger-export/src/main/resources/ranger-hive-security.xml");
+        exporter.setSentryConfig("/Users/loanermbp7345/sentry/ranger-export/src/main/resources/sentry-site.xml");
+        //validate sentry configuration
+        Assert.assertNotNull(exporter.sentryConfig);
+        //validate ranger configuration
+        Assert.assertNotNull(exporter.rangerConfig);
+        List<Long> policyIds = new ArrayList<Long>();
+        for(int i = 96; i <= 219 ; i++) {
+           policyIds.add(Long.valueOf(i));
+        }
+        exporter.revokePermissions(policyIds);
+    }
 }

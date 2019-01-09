@@ -180,12 +180,18 @@ public class RangerSentryRESTClient implements RangerAdminClient {
     // create policy ( working)
     webResource = createWebResource("/service/plugins/policies");
     webResource.addFilter(new HTTPBasicAuthFilter("admin", "hortonworks1"));
+    if(resource == null) {
+      //TODO Handle this case.
+      return 0L;
+    }
     Map<String, RangerPolicy.RangerPolicyResource> resources = new HashMap<>();
 
     RangerPolicy.RangerPolicyItem rangerPolicyItem;
     switch (resource.getObjectType()) {
       case DATABASE:
         resources.put("database", new RangerPolicy.RangerPolicyResource(resource.getDatabase()));
+        resources.put("table", new RangerPolicy.RangerPolicyResource("*"));
+        resources.put("column", new RangerPolicy.RangerPolicyResource("*"));
         break;
       case COLUMN:
         resources.put("database", new RangerPolicy.RangerPolicyResource(resource.getDatabase()));
@@ -198,6 +204,7 @@ public class RangerSentryRESTClient implements RangerAdminClient {
       case PARTITION:
         resources.put("database", new RangerPolicy.RangerPolicyResource(resource.getDatabase()));
         resources.put("table", new RangerPolicy.RangerPolicyResource(resource.getTable()));
+        resources.put("column", new RangerPolicy.RangerPolicyResource("*"));
         break;
       case URI:
         //TODO
@@ -210,7 +217,7 @@ public class RangerSentryRESTClient implements RangerAdminClient {
     }
     RangerPolicy policy = new RangerPolicy();
     policy.setService("Sandbox_hive");
-    policy.setName(String.valueOf(random.nextInt(Integer.SIZE - 1)));
+    policy.setName(String.valueOf(random.nextInt(Integer.MAX_VALUE - 1)));
     policy.setDescription("created by kalyan");
     policy.setIsAuditEnabled(false);
     policy.setCreatedBy("admin");
@@ -219,6 +226,12 @@ public class RangerSentryRESTClient implements RangerAdminClient {
     for (Map.Entry<TSentryPrincipal, List<TPrivilege>> permission : permissions.entrySet()) {
       rangerPolicyItem = new RangerPolicy.RangerPolicyItem();
       for (TPrivilege privilege : permission.getValue()) {
+        if(privilege.getAction().equals("*") || privilege.getAction().equals("owner")) {
+          privilege.setAction("all");
+        }
+        if(privilege.getAction().equals("owner")) {
+          privilege.setAction("all");
+        }
         rangerPolicyItem.getAccesses().add(new RangerPolicy.RangerPolicyItemAccess(privilege.getAction(), true));
       }
       if (permission.getKey().getType() == TSentryPrincipalType.GROUP) {
@@ -360,6 +373,35 @@ public class RangerSentryRESTClient implements RangerAdminClient {
     }
   }
 
+  public void revokeAccess(List<Long> policyIds) throws Exception {
+    //  Delete policy ( working)
+    ClientResponse response = null;
+    for(long id : policyIds) {
+      WebResource webResource = createWebResource("/service/plugins/policies/" + id);
+      webResource.addFilter(new HTTPBasicAuthFilter("admin", "hortonworks1"));
+      response = webResource.accept(RangerRESTUtils.REST_EXPECTED_MIME_TYPE).accept("*/*")
+              .delete(ClientResponse.class);
+
+//      response = webResource.accept(RangerRESTUtils.REST_MIME_TYPE_JSON).type(RangerRESTUtils.REST_MIME_TYPE_JSON).get(ClientResponse.class);
+      //   response = webResource.accept(RangerRESTUtils.REST_EXPECTED_MIME_TYPE).type(RangerRESTUtils.REST_EXPECTED_MIME_TYPE).get(ClientResponse.class);
+
+      if (response != null && !(response.getStatus() >= 200 && response.getStatus() < 300)) {
+        RESTResponse resp = RESTResponse.fromClientResponse(response);
+        LOG.error("revokeAccess() failed: HTTP status=" + response.getStatus() + ", message=" + resp.getMessage());
+
+        if (response.getStatus() == HttpServletResponse.SC_UNAUTHORIZED) {
+          throw new AccessControlException();
+        }
+
+        throw new Exception("HTTP " + response.getStatus() + " Error: " + resp.getMessage());
+      } else if (response == null) {
+        throw new Exception("unknown error during revokeAccess. serviceName=" + serviceName);
+      } else if (response.getStatus() == HttpServletResponse.SC_OK || response.getStatus() == HttpServletResponse.SC_NO_CONTENT) {
+        LOG.error("Policy with id %s revoked" + id);
+        System.out.println("Policy with id: " + id + " revoked");
+      }
+    }
+  }
   @Override
   public void revokeAccess(final GrantRevokeRequest request) throws Exception {
     if(LOG.isDebugEnabled()) {

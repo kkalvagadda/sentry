@@ -36,6 +36,7 @@ import org.apache.sentry.api.service.thrift.*;
 import org.apache.sentry.service.thrift.SentryServiceClientFactory;
 
 
+import java.io.FileWriter;
 import java.util.*;
 
 public class SentryExporter {
@@ -113,6 +114,8 @@ public class SentryExporter {
         // Fetch the permission mapping
         Map<TSentryAuthorizable, Map<TSentryPrincipal, List<TPrivilege>>> mapping =
                 client.fetchPolicyMappings(requestorName);
+        FileWriter writer = new FileWriter("/Users/loanermbp7345/output.txt");
+
         for (Map.Entry<TSentryAuthorizable, Map<TSentryPrincipal, List<TPrivilege>>> permissionInfo : mapping.entrySet()) {
             if (permissionInfo.getValue().size() == 0) {
                 // TODO This has to be fixed in sentry server.
@@ -120,7 +123,11 @@ public class SentryExporter {
             }
             long policyIdIngested = grantRangerPermission(rangerClient, permissionInfo.getKey(), permissionInfo.getValue());
             policyIdsIngested.add(policyIdIngested);
+            writer.write("Exporting permission for " + permissionInfo.getKey().toString());
+            writer.write("\r\n");
+            writer.flush();
         }
+        writer.close();
     }
 
     long grantRangerPermission(RangerSentryRESTClient rangerClient, TSentryAuthorizable authorizable,
@@ -150,8 +157,13 @@ public class SentryExporter {
         }
 
         RangerResource resource = getHiveResource(HiveOperationType.GRANT_PRIVILEGE, hivePrivObject);
+        try {
+//            System.out.println("Exporting permission for " + authorizable.toString());
+            return rangerClient.ingestPolicy(resource, permissions);
+        } catch (Exception e) {
 
-        return rangerClient.ingestPolicy(resource, permissions);
+        }
+        return 0;
     }
 
     @VisibleForTesting

@@ -264,6 +264,7 @@ public class RangerSentryRESTClient implements RangerAdminClient {
       // RESTResponse resp = RESTResponse.fromClientResponse(response);
       policyCreated = response.getEntity(RangerPolicy.class);
       LOG.error("Policy is created with id %s" + policyCreated.getId());
+      Thread.sleep(1000);
     }
     if(policyCreated != null) {
       return policyCreated.getId();
@@ -393,7 +394,8 @@ public class RangerSentryRESTClient implements RangerAdminClient {
           throw new AccessControlException();
         }
 
-        throw new Exception("HTTP " + response.getStatus() + " Error: " + resp.getMessage());
+       // throw new Exception("HTTP " + response.getStatus() + " Error: " + resp.getMessage());
+          continue;
       } else if (response == null) {
         throw new Exception("unknown error during revokeAccess. serviceName=" + serviceName);
       } else if (response.getStatus() == HttpServletResponse.SC_OK || response.getStatus() == HttpServletResponse.SC_NO_CONTENT) {

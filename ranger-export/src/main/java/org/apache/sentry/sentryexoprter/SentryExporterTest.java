@@ -68,7 +68,7 @@ public class SentryExporterTest {
         //validate ranger configuration
         Assert.assertNotNull(exporter.rangerConfig);
         List<Long> policyIds = new ArrayList<Long>();
-        for(int i = 327; i <= 1000 ; i++) {
+        for(int i = 800; i <= 2000 ; i++) {
            policyIds.add(Long.valueOf(i));
         }
         exporter.revokePermissions(policyIds);

@@ -38,6 +38,9 @@ import org.apache.sentry.service.thrift.SentryServiceClientFactory;
 
 import java.io.FileWriter;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class SentryExporter {
     enum HiveAccessType {NONE, CREATE, ALTER, DROP, INDEX, LOCK, SELECT, UPDATE, USE, READ, WRITE, ALL, ADMIN}
@@ -50,6 +53,7 @@ public class SentryExporter {
     SentryPolicyServiceClient client = null;
 
 
+    String rangerServiceName, applicationId, servicePropertyPrefix;
     SentryExporter() {
 
     }
@@ -88,6 +92,9 @@ public class SentryExporter {
 
         // initialize ranger client
         rangerClient = createAdminClient(serviceName, "hive", propertyPrefix);
+        rangerServiceName = serviceName;
+        applicationId = "hive";
+        servicePropertyPrefix = propertyPrefix;
 
         client = SentryServiceClientFactory.create(conf);
     }
@@ -105,7 +112,7 @@ public class SentryExporter {
     @VisibleForTesting
     void execute() throws Exception {
 
-        List<Long> policyIdsIngested = new ArrayList<>();
+    //    List<Long> policyIdsIngested = new ArrayList<>();
         String requestorName = "hive";
 
         // Setting up the ranger and sentry clients.
@@ -115,55 +122,22 @@ public class SentryExporter {
         Map<TSentryAuthorizable, Map<TSentryPrincipal, List<TPrivilege>>> mapping =
                 client.fetchPolicyMappings(requestorName);
         FileWriter writer = new FileWriter("/Users/loanermbp7345/output.txt");
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
 
         for (Map.Entry<TSentryAuthorizable, Map<TSentryPrincipal, List<TPrivilege>>> permissionInfo : mapping.entrySet()) {
             if (permissionInfo.getValue().size() == 0) {
                 // TODO This has to be fixed in sentry server.
                 continue;
             }
-            long policyIdIngested = grantRangerPermission(rangerClient, permissionInfo.getKey(), permissionInfo.getValue());
-            policyIdsIngested.add(policyIdIngested);
+   //         policyIdsIngested.add(policyIdIngested);
+            executorService.submit(new RangerExporter(permissionInfo.getKey(), permissionInfo.getValue()));
             writer.write("Exporting permission for " + permissionInfo.getKey().toString());
             writer.write("\r\n");
             writer.flush();
         }
+        executorService.shutdown();
+        executorService.awaitTermination(1000, TimeUnit.SECONDS);
         writer.close();
-    }
-
-    long grantRangerPermission(RangerSentryRESTClient rangerClient, TSentryAuthorizable authorizable,
-                               Map<TSentryPrincipal, List<TPrivilege>> permissions) throws Exception {
-        // For each entry in the mapping create HivePrivilegeObject and grant principals with the privileges.
-        // Construct grant request
-        HivePrivilegeObject hivePrivObject = null;
-        if (!authorizable.getUri().isEmpty()) {
-            // URI permission
-            //TODO
-            throw new Exception("URI permission not supported");
-        }
-        if (!authorizable.getColumn().isEmpty()) {
-            // Column permission
-            hivePrivObject = new HivePrivilegeObject(authorizable.getDb(), authorizable.getTable(),
-                    Collections.singletonList(authorizable.getColumn()));
-        } else if (!authorizable.getTable().isEmpty()) {
-            // Table Permission
-            hivePrivObject = new HivePrivilegeObject(HivePrivilegeObject.HivePrivilegeObjectType.TABLE_OR_VIEW, authorizable.getDb(), authorizable.getTable());
-
-        } else if (!authorizable.getDb().isEmpty()) {
-            //Database Permission
-            hivePrivObject = new HivePrivilegeObject(HivePrivilegeObject.HivePrivilegeObjectType.DATABASE, authorizable.getDb(), "*");
-        } else if (!authorizable.getServer().isEmpty()) {
-            // Server level permission
-            hivePrivObject = new HivePrivilegeObject(HivePrivilegeObject.HivePrivilegeObjectType.GLOBAL, authorizable.getServer(), "*");
-        }
-
-        RangerResource resource = getHiveResource(HiveOperationType.GRANT_PRIVILEGE, hivePrivObject);
-        try {
-//            System.out.println("Exporting permission for " + authorizable.toString());
-            return rangerClient.ingestPolicy(resource, permissions);
-        } catch (Exception e) {
-
-        }
-        return 0;
     }
 
     @VisibleForTesting
@@ -409,5 +383,92 @@ public class SentryExporter {
             return false;
         }
         return true;
+    }
+
+    class RangerExporter implements Runnable {
+        private RangerSentryRESTClient rangerClient;
+        TSentryAuthorizable authorizable;
+        Map<TSentryPrincipal, List<TPrivilege>> permissionInfo;
+        RangerExporter(TSentryAuthorizable authorizable,
+                       Map<TSentryPrincipal, List<TPrivilege>> permissions) {
+            rangerClient = createAdminClient();
+            this.authorizable = authorizable;
+            this.permissionInfo = permissions;
+        }
+        private RangerSentryRESTClient createAdminClient() {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("==> RangerBasePlugin.createAdminClient(" + rangerServiceName + ", " + applicationId + ", " + servicePropertyPrefix + ")");
+            }
+
+            RangerSentryRESTClient ret = null;
+
+            String propertyName = servicePropertyPrefix + ".policy.source.impl";
+            String policySourceImpl = RangerConfiguration.getInstance().get(propertyName);
+
+            if (StringUtils.isEmpty(policySourceImpl)) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(String.format("Value for property[%s] was null or empty. Unexpected! Will use policy source of type[%s]", propertyName, RangerAdminRESTClient.class.getName()));
+                }
+            } else {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(String.format("Value for property[%s] was [%s].", propertyName, policySourceImpl));
+                }
+                try {
+
+                    ret = RangerSentryRESTClient.class.newInstance();
+                } catch (Exception excp) {
+                    LOG.error("failed to instantiate policy source of type '" + policySourceImpl + "'. Will use policy source of type '" + RangerAdminRESTClient.class.getName() + "'", excp);
+                }
+            }
+
+            if (ret == null) {
+                ret = new RangerSentryRESTClient();
+            }
+
+            ret.init(rangerServiceName, applicationId, servicePropertyPrefix);
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("<== RangerBasePlugin.createAdminClient(" + rangerServiceName + ", " + applicationId + ", " + servicePropertyPrefix + "): policySourceImpl=" + policySourceImpl + ", client=" + ret);
+            }
+            return ret;
+        }
+
+        private long grantRangerPermission(TSentryAuthorizable authorizable,
+                                   Map<TSentryPrincipal, List<TPrivilege>> permissions) {
+            // For each entry in the mapping create HivePrivilegeObject and grant principals with the privileges.
+            // Construct grant request
+            HivePrivilegeObject hivePrivObject = null;
+            if (!authorizable.getUri().isEmpty()) {
+                System.out.println("URL permission not supported");
+            }
+            if (!authorizable.getColumn().isEmpty()) {
+                // Column permission
+                hivePrivObject = new HivePrivilegeObject(authorizable.getDb(), authorizable.getTable(),
+                        Collections.singletonList(authorizable.getColumn()));
+            } else if (!authorizable.getTable().isEmpty()) {
+                // Table Permission
+                hivePrivObject = new HivePrivilegeObject(HivePrivilegeObject.HivePrivilegeObjectType.TABLE_OR_VIEW, authorizable.getDb(), authorizable.getTable());
+
+            } else if (!authorizable.getDb().isEmpty()) {
+                //Database Permission
+                hivePrivObject = new HivePrivilegeObject(HivePrivilegeObject.HivePrivilegeObjectType.DATABASE, authorizable.getDb(), "*");
+            } else if (!authorizable.getServer().isEmpty()) {
+                // Server level permission
+                hivePrivObject = new HivePrivilegeObject(HivePrivilegeObject.HivePrivilegeObjectType.GLOBAL, authorizable.getServer(), "*");
+            }
+
+            RangerResource resource = getHiveResource(HiveOperationType.GRANT_PRIVILEGE, hivePrivObject);
+            try {
+//            System.out.println("Exporting permission for " + authorizable.toString());
+                return rangerClient.ingestPolicy(resource, permissions);
+            } catch (Exception e) {
+
+            }
+            return 0;
+        }
+
+        public void run() {
+            grantRangerPermission(authorizable, permissionInfo);
+        }
     }
 }

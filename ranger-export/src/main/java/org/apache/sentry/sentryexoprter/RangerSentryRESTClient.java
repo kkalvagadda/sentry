@@ -185,18 +185,21 @@ public class RangerSentryRESTClient implements RangerAdminClient {
       return 0L;
     }
     Map<String, RangerPolicy.RangerPolicyResource> resources = new HashMap<>();
-
+    String policyName = null;
     RangerPolicy.RangerPolicyItem rangerPolicyItem;
     switch (resource.getObjectType()) {
       case DATABASE:
         resources.put("database", new RangerPolicy.RangerPolicyResource(resource.getDatabase()));
         resources.put("table", new RangerPolicy.RangerPolicyResource("*"));
         resources.put("column", new RangerPolicy.RangerPolicyResource("*"));
+        policyName = "database" + "=" + resource.getDatabase();
         break;
       case COLUMN:
         resources.put("database", new RangerPolicy.RangerPolicyResource(resource.getDatabase()));
         resources.put("table", new RangerPolicy.RangerPolicyResource(resource.getTable()));
         resources.put("column", new RangerPolicy.RangerPolicyResource(resource.getColumn()));
+        policyName = "database" + "=" + resource.getDatabase() + "->" + "table" + "=" + resource.getTable()
+                + "->" + "column" + "=" + resource.getColumn();
         break;
       case TABLE:
       case VIEW:
@@ -205,6 +208,7 @@ public class RangerSentryRESTClient implements RangerAdminClient {
         resources.put("database", new RangerPolicy.RangerPolicyResource(resource.getDatabase()));
         resources.put("table", new RangerPolicy.RangerPolicyResource(resource.getTable()));
         resources.put("column", new RangerPolicy.RangerPolicyResource("*"));
+        policyName = "database" + "=" + resource.getDatabase() + "->" + "table" + "=" + resource.getTable();
         break;
       case URI:
         //TODO
@@ -218,10 +222,12 @@ public class RangerSentryRESTClient implements RangerAdminClient {
     RangerPolicy policy = new RangerPolicy();
     policy.setService("Sandbox_hive");
     policy.setName(String.valueOf(random.nextInt(Integer.MAX_VALUE - 1)));
+    policy.setName(policyName);
     policy.setDescription("created by kalyan");
-    policy.setIsAuditEnabled(false);
+    policy.setIsAuditEnabled(true);
     policy.setCreatedBy("admin");
     policy.setResources(resources);
+    policy.setPolicyLabels(Collections.singletonList("Ingested from Sentry"));
 
     for (Map.Entry<TSentryPrincipal, List<TPrivilege>> permission : permissions.entrySet()) {
       rangerPolicyItem = new RangerPolicy.RangerPolicyItem();
